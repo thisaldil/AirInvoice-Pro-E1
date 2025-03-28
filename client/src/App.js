@@ -1,25 +1,29 @@
-import logo from "./logo.svg";
-import "./App.css";
+import React, { useState } from "react";
+import Sidebar from "./components/common/Sidebar";
+import Header from "./components/common/Header";
+import Dashboard from "./components/Dashboard";
+import InvoiceUpload from "./components/InvoiceUpload";
+import TemplateManager from "./components/TemplateManager";
+import CommunicationCenter from "./components/CommunicationCenter";
+import "./index.css";
 
-function App() {
+const App = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="flex h-screen w-full bg-gray-50">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">
+          {activeTab === "dashboard" && <Dashboard />}
+          {activeTab === "upload" && <InvoiceUpload />}
+          {activeTab === "templates" && <TemplateManager />}
+          {activeTab === "communication" && <CommunicationCenter />}
+        </main>
+      </div>
     </div>
   );
-}
+};
 
 export default App;
