@@ -1,25 +1,56 @@
-import React, { useState } from "react";
-import { FileUpIcon, FileIcon, XIcon } from "lucide-react";
-import * as pdfjs from "pdfjs-dist/build/pdf";
+import React, { useCallback, useState } from "react";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 
-// ✅ Set the PDF.js worker location
-import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+import { FileUpIcon, FileIcon, CheckCircleIcon, XIcon } from "lucide-react";
+
+GlobalWorkerOptions.workerSrc = "pdfjs-dist/build/pdf.worker.min.mjs";
 
 function InvoiceUpload({ onUpload }) {
   const [file, setFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const [extractedText, setExtractedText] = useState("");
 
-  const handleFileChange = async (e) => {
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.type === "application/pdf") {
+        setFile(droppedFile);
+        setError(null);
+      } else {
+        setError("Please upload a PDF file");
+      }
+    }
+  }, []);
+
+  const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       if (selectedFile.type === "application/pdf") {
         setFile(selectedFile);
         setError(null);
-        await extractTextFromPDF(selectedFile);
       } else {
-        setError("Please upload a PDF file.");
+        setError("Please upload a PDF file");
       }
     }
   };
@@ -30,28 +61,43 @@ function InvoiceUpload({ onUpload }) {
       reader.onload = async function (event) {
         try {
           const typedArray = new Uint8Array(event.target.result);
-          const pdf = await pdfjs.getDocument({ data: typedArray }).promise;
+          const pdf = await getDocument({ data: typedArray }).promise;
           let extractedText = "";
 
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
-            const pageText = textContent.items.map((item) => item.str).join(" ");
-            extractedText += pageText + "\n\n";
+
+            if (!textContent || !Array.isArray(textContent.items)) continue;
+
+            extractedText +=
+              textContent.items.map((item) => item.str).join(" ") + "\n\n";
           }
 
-          setExtractedText(extractedText);
+          setIsProcessing(false);
           onUpload({ extractedText });
         } catch (err) {
           console.error("Error extracting text:", err);
           setError("Failed to extract text from the PDF.");
+          setIsProcessing(false);
         }
       };
       reader.readAsArrayBuffer(file);
     } catch (err) {
       console.error("PDF processing error:", err);
       setError("An error occurred while processing the PDF.");
+      setIsProcessing(false);
     }
+  };
+
+  const handleProcessInvoice = () => {
+    if (!file) return;
+    setIsProcessing(true);
+    extractTextFromPDF(file);
+  };
+
+  const handleRemoveFile = () => {
+    setFile(null);
   };
 
   return (
@@ -62,7 +108,17 @@ function InvoiceUpload({ onUpload }) {
       </p>
 
       {!file ? (
-        <div className="border-2 border-dashed rounded-lg p-12 text-center border-gray-300 hover:border-blue-400">
+        <div
+          className={`border-2 border-dashed rounded-lg p-12 text-center ${
+            isDragging
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 hover:border-blue-400"
+          }`}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           <FileUpIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-700 mb-2">
             Drag & Drop your invoice here
@@ -87,17 +143,41 @@ function InvoiceUpload({ onUpload }) {
       ) : (
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-800">Extracted Text</h3>
+            <h3 className="text-lg font-medium text-gray-800">Selected File</h3>
             <button
-              onClick={() => setFile(null)}
+              onClick={handleRemoveFile}
               className="text-gray-400 hover:text-red-500"
             >
               <XIcon className="w-5 h-5" />
             </button>
           </div>
-          <div className="p-4 bg-gray-50 rounded-md mb-6">
-            <p className="text-sm text-gray-800 whitespace-pre-wrap">
-              {extractedText || "No text extracted"}
-            </p>
+          <div className="flex items-center p-4 bg-gray-50 rounded-md mb-6">
+            <div className="bg-blue-100 p-3 rounded">
+              <FileIcon className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="ml-4 flex-1">
+              <p className="font-medium text-gray-800">{file.name}</p>
+              <p className="text-sm text-gray-500">
+                {(file.size / 1024).toFixed(2)} KB
+              </p>
+            </div>
+            <CheckCircleIcon className="w-6 h-6 text-green-500" />
           </div>
-        </
+          <button
+            onClick={handleProcessInvoice}
+            disabled={isProcessing}
+            className={`w-full py-3 rounded-md font-medium ${
+              isProcessing
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+          >
+            {isProcessing ? "Processing..." : "Extract Text"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default InvoiceUpload;
