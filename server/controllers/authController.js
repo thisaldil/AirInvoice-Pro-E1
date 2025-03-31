@@ -5,5 +5,6 @@ exports.authenticateGoogle = passport.authenticate('google', {
 });
 
 exports.handleGoogleRedirect = (req, res) => {
-    res.status(200).send({ message: 'Authentication successful, welcome!' });
+    console.log("Google Login Successful:", req.user);
+    res.status(200).json({ message: "Authentication successful", user: req.user });
 };

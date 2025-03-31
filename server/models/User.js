@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-  googleId: String
+  googleId: { type: String, required: true, unique: true }
 });
 
-mongoose.model('users', userSchema);
+module.exports = mongoose.model('User', userSchema);
