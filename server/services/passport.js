@@ -10,17 +10,21 @@ passport.use(new GoogleStrategy({
     callbackURL: "/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        console.log("Google Profile ID:", profile.id);
-
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-            console.log("Creating new user...");
-            user = new User({ googleId: profile.id });
+            user = new User({
+                googleId: profile.id,
+                name: profile.displayName,
+                email: profile.emails[0].value,
+                picture: profile.photos[0].value
+            });
             await user.save();
-            console.log("User saved successfully:", user);
         } else {
-            console.log("User already exists:", user);
+            user.name = profile.displayName;
+            user.email = profile.emails[0].value;
+            user.picture = profile.photos[0].value;
+            await user.save();
         }
 
         return done(null, user);

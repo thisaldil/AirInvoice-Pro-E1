@@ -1,10 +1,19 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsAuthenticated(true);
+      navigate("/dashboard");
+    }
+  }, []);
 
   const handleSuccess = async (response) => {
     try {
@@ -22,6 +31,12 @@ const Login = () => {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify({
+          name: data.user.name,
+          picture: data.user.picture,
+          email: data.user.email,
+        }));
+        setIsAuthenticated(true);
         navigate("/dashboard");
       }
     } catch (error) {

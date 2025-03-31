@@ -30,11 +30,22 @@ const handleGoogleToken = async (req, res) => {
 
         const payload = ticket.getPayload();
         const googleId = payload.sub;
+        const imageUrl = payload.picture.replace("=s96-c", "");
 
         let user = await User.findOne({ googleId });
 
         if (!user) {
-            user = new User({ googleId });
+            user = new User({
+                googleId,
+                name: payload.name,
+                email: payload.email,
+                picture: imageUrl
+            });
+            await user.save();
+        } else {
+            user.name = payload.name;
+            user.email = payload.email;
+            user.picture = imageUrl;
             await user.save();
         }
 
@@ -42,7 +53,16 @@ const handleGoogleToken = async (req, res) => {
 
         await User.findByIdAndUpdate(user._id, { token: jwtToken });
 
-        res.status(200).json({ message: "Authentication successful", user, token: jwtToken });
+        res.status(200).json({
+            message: "Authentication successful",
+            user: {
+                googleId: user.googleId,
+                name: user.name,
+                email: user.email,
+                picture: user.picture,
+            },
+            token: jwtToken
+        });
     } catch (error) {
         console.error("Google Token Handling Error:", error);
         res.status(500).json({ message: "Internal Server Error" });

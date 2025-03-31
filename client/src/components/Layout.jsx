@@ -36,6 +36,7 @@ function Layout({ children, currentPage, onNavigate }) {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
