@@ -1,18 +1,25 @@
-import React, { useState } from "react";
-import Sidebar from "./components/common/Sidebar";
-import Header from "./components/common/Header";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import InvoiceUpload from "./components/invoice/InvoiceUpload.jsx";
 import InvoicePreview from "./components/invoice/InvoicePreview.jsx";
 import TemplateManager from "./components/templates/TemplateManager.jsx";
 import TemplateEditor from "./components/templates/TemplateEditor.jsx";
 import SendOptions from "./components/send/SendOptions.jsx";
+import Login from "./components/auth/Login";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [generatedInvoice, setGeneratedInvoice] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
+  }, []);
 
   const renderContent = () => {
     switch (currentPage) {
@@ -72,18 +79,20 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-50">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          {activeTab === "dashboard" && <Dashboard />}
-          {activeTab === "upload" && <InvoiceUpload />}
-          {activeTab === "templates" && <TemplateManager />}
-          {activeTab === "communication" && <CommunicationCenter />}
-        </main>
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route 
+          path="/dashboard" 
+          element={isAuthenticated ? (
+            <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
+              {renderContent()}
+            </Layout>
+          ) : <Navigate to="/login" />}
+        />
+        <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+      </Routes>
+    </Router>
   );
 }
 
