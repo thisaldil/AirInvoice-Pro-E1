@@ -1,0 +1,421 @@
+import React, { useState } from "react";
+import {
+  SaveIcon,
+  XIcon,
+  ImageIcon,
+  PlusIcon,
+  LayoutIcon,
+  TypeIcon,
+} from "lucide-react";
+
+function TemplateEditor({ onSave, onCancel }) {
+  const [templateName, setTemplateName] = useState("New Template");
+  const [companyName, setCompanyName] = useState("Your Company Name");
+  const [companyLogo, setCompanyLogo] = useState(
+    "https://via.placeholder.com/150x50?text=Your+Logo"
+  );
+  const [companyAddress, setCompanyAddress] = useState(
+    "123 Business Street\nCity, State 12345\nPhone: (123) 456-7890\nEmail: info@yourcompany.com"
+  );
+  const [accentColor, setAccentColor] = useState("#3B82F6");
+  const [showFooter, setShowFooter] = useState(true);
+  const [footerText, setFooterText] = useState("Thank you for your business!");
+  const [selectedSection, setSelectedSection] = useState(null);
+
+  const handleSave = () => {
+    const newTemplate = {
+      id: Date.now(),
+      name: templateName,
+      description: "Custom invoice template",
+      isDefault: false,
+      company: {
+        name: companyName,
+        logo: companyLogo,
+        address: companyAddress,
+      },
+      design: {
+        accentColor,
+        showFooter,
+        footerText,
+      },
+    };
+    onSave(newTemplate);
+  };
+
+  const handleLogoChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCompanyLogo(event.target.result);
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Template Editor</h1>
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
+          >
+            <XIcon className="w-4 h-4 mr-2" />
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+          >
+            <SaveIcon className="w-4 h-4 mr-2" />
+            Save Template
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Template Preview */}
+        <div className="lg:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="p-6 bg-gray-50 border-b">
+            <h2 className="font-medium text-gray-800">Preview</h2>
+          </div>
+          <div className="p-8">
+            {/* Invoice Template Preview */}
+            <div className="border rounded-md overflow-hidden">
+              {/* Header */}
+              <div
+                className={`p-6 border-b flex justify-between items-start ${
+                  selectedSection === "header" ? "ring-2 ring-blue-500" : ""
+                }`}
+                onClick={() => setSelectedSection("header")}
+              >
+                <div>
+                  <img
+                    src={companyLogo}
+                    alt="Company Logo"
+                    className="max-h-16 mb-2"
+                  />
+                  <h2
+                    className="text-xl font-bold"
+                    style={{
+                      color: accentColor,
+                    }}
+                  >
+                    {companyName}
+                  </h2>
+                </div>
+                <div className="text-right">
+                  <h1
+                    className="text-2xl font-bold mb-1"
+                    style={{
+                      color: accentColor,
+                    }}
+                  >
+                    INVOICE
+                  </h1>
+                  <p className="text-gray-500">#INV-2023-001</p>
+                  <p className="text-gray-500">Date: June 15, 2023</p>
+                </div>
+              </div>
+              {/* Company & Client Info */}
+              <div
+                className={`p-6 grid grid-cols-2 gap-6 border-b ${
+                  selectedSection === "info" ? "ring-2 ring-blue-500" : ""
+                }`}
+                onClick={() => setSelectedSection("info")}
+              >
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                    From
+                  </h3>
+                  <div className="whitespace-pre-line">{companyAddress}</div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">To</h3>
+                  <p className="font-medium">John Smith</p>
+                  <p>123 Client Street</p>
+                  <p>Client City, State 54321</p>
+                  <p>Email: client@example.com</p>
+                </div>
+              </div>
+              {/* Flight Details */}
+              <div
+                className={`p-6 border-b ${
+                  selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
+                }`}
+                onClick={() => setSelectedSection("flights")}
+              >
+                <h3
+                  className="font-medium mb-4"
+                  style={{
+                    color: accentColor,
+                  }}
+                >
+                  Flight Details
+                </h3>
+                <div className="space-y-6">
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium">Outbound Flight</h4>
+                      <span
+                        className="text-sm font-medium"
+                        style={{
+                          color: accentColor,
+                        }}
+                      >
+                        AA1234
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="text-sm text-gray-500">From</p>
+                        <p className="font-medium">New York (JFK)</p>
+                        <p className="text-sm">July 15, 2023, 14:30</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">To</p>
+                        <p className="font-medium">London (LHR)</p>
+                        <p className="text-sm">July 16, 2023, 02:45</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium">Return Flight</h4>
+                      <span
+                        className="text-sm font-medium"
+                        style={{
+                          color: accentColor,
+                        }}
+                      >
+                        AA1235
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="text-sm text-gray-500">From</p>
+                        <p className="font-medium">London (LHR)</p>
+                        <p className="text-sm">July 22, 2023, 10:15</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">To</p>
+                        <p className="font-medium">New York (JFK)</p>
+                        <p className="text-sm">July 22, 2023, 13:20</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Pricing */}
+              <div
+                className={`p-6 border-b ${
+                  selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
+                }`}
+                onClick={() => setSelectedSection("pricing")}
+              >
+                <h3
+                  className="font-medium mb-4"
+                  style={{
+                    color: accentColor,
+                  }}
+                >
+                  Pricing Details
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Ticket Price</span>
+                    <span>$850.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Taxes & Fees</span>
+                    <span>$120.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Service Fee</span>
+                    <span>$50.00</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t font-medium">
+                    <span>Total Amount</span>
+                    <span>$1,020.00</span>
+                  </div>
+                </div>
+              </div>
+              {/* Footer */}
+              {showFooter && (
+                <div
+                  className={`p-6 text-center ${
+                    selectedSection === "footer" ? "ring-2 ring-blue-500" : ""
+                  }`}
+                  onClick={() => setSelectedSection("footer")}
+                  style={{
+                    backgroundColor: accentColor + "10",
+                  }}
+                >
+                  <p className="text-gray-700">{footerText}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Editor Controls */}
+        <div className="lg:w-1/3 bg-white rounded-lg shadow-md">
+          <div className="p-6 bg-gray-50 border-b">
+            <h2 className="font-medium text-gray-800">Template Settings</h2>
+          </div>
+          <div className="p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Template Name
+              </label>
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company Logo
+              </label>
+              <div className="flex items-center mb-2">
+                <img
+                  src={companyLogo}
+                  alt="Logo Preview"
+                  className="h-10 mr-4"
+                />
+                <label className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded cursor-pointer">
+                  Change Logo
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                  />
+                </label>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company Address
+              </label>
+              <textarea
+                value={companyAddress}
+                onChange={(e) => setCompanyAddress(e.target.value)}
+                rows={4}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Accent Color
+              </label>
+              <div className="flex items-center">
+                <input
+                  type="color"
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="w-10 h-10 rounded mr-4 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="showFooter"
+                checked={showFooter}
+                onChange={(e) => setShowFooter(e.target.checked)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <label
+                htmlFor="showFooter"
+                className="ml-2 text-sm text-gray-700"
+              >
+                Show Footer
+              </label>
+            </div>
+            {showFooter && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Footer Text
+                </label>
+                <input
+                  type="text"
+                  value={footerText}
+                  onChange={(e) => setFooterText(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            )}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Template Sections
+              </h3>
+              <div className="space-y-2">
+                {[
+                  {
+                    id: "header",
+                    label: "Header",
+                    icon: LayoutIcon,
+                  },
+                  {
+                    id: "info",
+                    label: "Company & Client Info",
+                    icon: TypeIcon,
+                  },
+                  {
+                    id: "flights",
+                    label: "Flight Details",
+                    icon: PlusIcon,
+                  },
+                  {
+                    id: "pricing",
+                    label: "Pricing",
+                    icon: PlusIcon,
+                  },
+                  {
+                    id: "footer",
+                    label: "Footer",
+                    icon: PlusIcon,
+                  },
+                ].map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setSelectedSection(section.id)}
+                    className={`flex items-center w-full p-2 rounded-md text-left ${
+                      selectedSection === section.id
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <section.icon className="w-4 h-4 mr-2" />
+                    <span>{section.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+export default TemplateEditor;
