@@ -1,7 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { FcGoogle } from "react-icons/fc";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,6 +13,10 @@ const Login = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: response.credential }),
       });
+
+      if (!res.ok) {
+        throw new Error("Failed to authenticate");
+      }
 
       const data = await res.json();
 
@@ -26,23 +30,13 @@ const Login = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <GoogleOAuthProvider clientId="536656085214-lflgf5vpabtlh57mt6jj5f4v2qpdu6o0.apps.googleusercontent.com">
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <div className="bg-white p-10 rounded-lg shadow-lg text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Login</h1>
           <GoogleLogin
             onSuccess={handleSuccess}
             onError={() => console.error("Google Login Failed")}
-            render={(renderProps) => (
-              <button
-                className="flex items-center px-4 py-2 border rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600"
-                onClick={renderProps.onClick}
-                disabled={renderProps.disabled}
-              >
-                <FcGoogle className="text-2xl mr-2" />
-                Login with Google
-              </button>
-            )}
           />
         </div>
       </div>
