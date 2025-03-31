@@ -1,115 +1,68 @@
-import React, { useCallback, useState } from "react";
-import { FileUpIcon, FileIcon, CheckCircleIcon, XIcon } from "lucide-react";
+import React, { useState } from "react";
+import { FileUpIcon, FileIcon, XIcon } from "lucide-react";
+import * as pdfjs from "pdfjs-dist/build/pdf";
+
+// ✅ Set the PDF.js worker location
+import pdfWorker from "pdfjs-dist/build/pdf.worker.entry";
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 function InvoiceUpload({ onUpload }) {
   const [file, setFile] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [extractedText, setExtractedText] = useState("");
 
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type === "application/pdf") {
-        setFile(droppedFile);
-        setError(null);
-      } else {
-        setError("Please upload a PDF file");
-      }
-    }
-  }, []);
-
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0];
       if (selectedFile.type === "application/pdf") {
         setFile(selectedFile);
         setError(null);
+        await extractTextFromPDF(selectedFile);
       } else {
-        setError("Please upload a PDF file");
+        setError("Please upload a PDF file.");
       }
     }
   };
 
-  const handleRemoveFile = () => {
-    setFile(null);
-  };
+  const extractTextFromPDF = async (file) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = async function (event) {
+        try {
+          const typedArray = new Uint8Array(event.target.result);
+          const pdf = await pdfjs.getDocument({ data: typedArray }).promise;
+          let extractedText = "";
 
-  const handleProcessInvoice = () => {
-    if (!file) return;
-    setIsProcessing(true);
-    setTimeout(() => {
-      const mockInvoiceData = {
-        airlineReference: "AB123456",
-        passengerName: "John Smith",
-        flightDetails: [
-          {
-            flight: "AA1234",
-            from: "New York (JFK)",
-            to: "London (LHR)",
-            date: "2023-07-15",
-            departureTime: "14:30",
-            arrivalTime: "02:45 +1",
-          },
-          {
-            flight: "AA1235",
-            from: "London (LHR)",
-            to: "New York (JFK)",
-            date: "2023-07-22",
-            departureTime: "10:15",
-            arrivalTime: "13:20",
-          },
-        ],
-        ticketPrice: 850.0,
-        taxes: 120.0,
-        totalAmount: 970.0,
-        currency: "USD",
-        issueDate: "2023-06-01",
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item) => item.str).join(" ");
+            extractedText += pageText + "\n\n";
+          }
+
+          setExtractedText(extractedText);
+          onUpload({ extractedText });
+        } catch (err) {
+          console.error("Error extracting text:", err);
+          setError("Failed to extract text from the PDF.");
+        }
       };
-      setIsProcessing(false);
-      onUpload(mockInvoiceData);
-    }, 2000);
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      console.error("PDF processing error:", err);
+      setError("An error occurred while processing the PDF.");
+    }
   };
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Invoice</h1>
       <p className="text-gray-600 mb-8">
-        Upload an airline ticket invoice to extract its data and create a new
-        invoice with your company template.
+        Upload an invoice to extract its text.
       </p>
+
       {!file ? (
-        <div
-          className={`border-2 border-dashed rounded-lg p-12 text-center ${
-            isDragging
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 hover:border-blue-400"
-          }`}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
+        <div className="border-2 border-dashed rounded-lg p-12 text-center border-gray-300 hover:border-blue-400">
           <FileUpIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-700 mb-2">
             Drag & Drop your invoice here
@@ -127,48 +80,24 @@ function InvoiceUpload({ onUpload }) {
           <p className="text-sm text-gray-500 mt-4">Supported file: PDF</p>
           {error && (
             <div className="mt-4 text-red-500 bg-red-50 p-3 rounded">
-              <p>{error}</p>
+              {error}
             </div>
           )}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-800">Selected File</h3>
+            <h3 className="text-lg font-medium text-gray-800">Extracted Text</h3>
             <button
-              onClick={handleRemoveFile}
+              onClick={() => setFile(null)}
               className="text-gray-400 hover:text-red-500"
             >
               <XIcon className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-center p-4 bg-gray-50 rounded-md mb-6">
-            <div className="bg-blue-100 p-3 rounded">
-              <FileIcon className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="font-medium text-gray-800">{file.name}</p>
-              <p className="text-sm text-gray-500">
-                {(file.size / 1024).toFixed(2)} KB
-              </p>
-            </div>
-            <CheckCircleIcon className="w-6 h-6 text-green-500" />
+          <div className="p-4 bg-gray-50 rounded-md mb-6">
+            <p className="text-sm text-gray-800 whitespace-pre-wrap">
+              {extractedText || "No text extracted"}
+            </p>
           </div>
-          <button
-            onClick={handleProcessInvoice}
-            disabled={isProcessing}
-            className={`w-full py-3 rounded-md font-medium ${
-              isProcessing
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {isProcessing ? "Processing..." : "Process Invoice"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default InvoiceUpload;
+        </
