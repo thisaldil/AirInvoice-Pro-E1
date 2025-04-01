@@ -23,6 +23,14 @@ const Login = () => {
         body: JSON.stringify({ token: response.credential }),
       });
 
+      if (res.status === 404) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        sessionStorage.clear();
+        alert("Account not registered. Please contact admin.");
+        return;
+      }
+
       if (!res.ok) {
         throw new Error("Failed to authenticate");
       }
