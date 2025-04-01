@@ -1,9 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
-
 import { FileUpIcon, FileIcon, CheckCircleIcon, XIcon } from "lucide-react";
-
-GlobalWorkerOptions.workerSrc = "pdfjs-dist/build/pdf.worker.min.mjs";
 
 function InvoiceUpload({ onUpload }) {
   const [file, setFile] = useState(null);
@@ -57,35 +53,33 @@ function InvoiceUpload({ onUpload }) {
 
   const extractTextFromPDF = async (file) => {
     try {
-      const reader = new FileReader();
-      reader.onload = async function (event) {
-        try {
-          const typedArray = new Uint8Array(event.target.result);
-          const pdf = await getDocument({ data: typedArray }).promise;
-          let extractedText = "";
+      const formData = new FormData();
+      formData.append("document", file);
 
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-
-            if (!textContent || !Array.isArray(textContent.items)) continue;
-
-            extractedText +=
-              textContent.items.map((item) => item.str).join(" ") + "\n\n";
-          }
-
-          setIsProcessing(false);
-          onUpload({ extractedText });
-        } catch (err) {
-          console.error("Error extracting text:", err);
-          setError("Failed to extract text from the PDF.");
-          setIsProcessing(false);
+      const response = await fetch(
+        "https://api.mindee.net/v1/products/mindee/invoice/v1/predict",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Token 6717ce11d8eafbeb5348dbe13f1b64a9",
+          },
+          body: formData,
         }
-      };
-      reader.readAsArrayBuffer(file);
+      );
+
+      const result = await response.json();
+
+      if (result.api_request && result.api_request.status === "success") {
+        const invoiceData = result.document.inference.prediction;
+        const formatted = JSON.stringify(invoiceData, null, 2);
+        onUpload({ extractedText: formatted });
+      } else {
+        setError("Failed to extract invoice data.");
+      }
     } catch (err) {
-      console.error("PDF processing error:", err);
-      setError("An error occurred while processing the PDF.");
+      console.error("Mindee API error:", err);
+      setError("An error occurred while sending the file to Mindee.");
+    } finally {
       setIsProcessing(false);
     }
   };
