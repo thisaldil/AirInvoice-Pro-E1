@@ -7,6 +7,7 @@ import {
   BoxIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import logo from "../images/logo.png";
 
 function Layout({ children, currentPage, onNavigate }) {
   const menuItems = [
@@ -44,8 +45,7 @@ function Layout({ children, currentPage, onNavigate }) {
     <div className="flex h-screen bg-gray-100">
       <div className="w-64 bg-white shadow-md">
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-blue-600">AirInvoice</h1>
-          <p className="text-sm text-gray-500">Invoice Management</p>
+          <img src={logo} alt="logo" className="max-w-32" />
         </div>
         <nav className="mt-6">
           <ul>
