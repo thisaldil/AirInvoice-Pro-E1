@@ -4,6 +4,21 @@ const User = require("../models/User");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const createUser = async (payload) => {
+    const googleId = payload.sub;
+    const imageUrl = payload.picture.replace("=s96-c", "");
+
+    const user = new User({
+        googleId,
+        name: payload.name,
+        email: payload.email,
+        picture: imageUrl
+    });
+
+    await user.save();
+    return user;
+};
+
 const handleGoogleRedirect = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ message: "Authentication failed" });
@@ -30,23 +45,11 @@ const handleGoogleToken = async (req, res) => {
 
         const payload = ticket.getPayload();
         const googleId = payload.sub;
-        const imageUrl = payload.picture.replace("=s96-c", "");
 
         let user = await User.findOne({ googleId });
 
         if (!user) {
-            user = new User({
-                googleId,
-                name: payload.name,
-                email: payload.email,
-                picture: imageUrl
-            });
-            await user.save();
-        } else {
-            user.name = payload.name;
-            user.email = payload.email;
-            user.picture = imageUrl;
-            await user.save();
+            return res.status(404).json({ message: "User not found" });
         }
 
         const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "24h" });
@@ -72,4 +75,5 @@ const handleGoogleToken = async (req, res) => {
 module.exports = {
     handleGoogleRedirect,
     handleGoogleToken,
+    createUser
 };

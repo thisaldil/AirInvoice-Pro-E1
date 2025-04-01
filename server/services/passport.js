@@ -2,6 +2,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const { createUser } = require('../controllers/authController'); 
 require('dotenv').config();
 
 passport.use(new GoogleStrategy({
@@ -13,13 +14,13 @@ passport.use(new GoogleStrategy({
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-            user = new User({
-                googleId: profile.id,
+            const payload = {
+                sub: profile.id,
                 name: profile.displayName,
                 email: profile.emails[0].value,
                 picture: profile.photos[0].value
-            });
-            await user.save();
+            };
+            user = await createUser(payload);
         } else {
             user.name = profile.displayName;
             user.email = profile.emails[0].value;
