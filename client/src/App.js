@@ -8,6 +8,7 @@ import TemplateManager from "./components/templates/TemplateManager.jsx";
 import TemplateEditor from "./components/templates/TemplateEditor.jsx";
 import SendOptions from "./components/send/SendOptions.jsx";
 import Login from "./components/auth/Login";
+import Register from "./components/auth/Register.jsx";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -82,6 +83,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route 
           path="/dashboard" 
           element={isAuthenticated ? (

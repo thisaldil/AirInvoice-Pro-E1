@@ -13,4 +13,6 @@ router.get(
 
 router.post("/google/callback", authController.handleGoogleToken);
 
+router.post("/google/register", authController.handleGoogleRegister);
+
 module.exports = router;

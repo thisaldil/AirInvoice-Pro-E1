@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { FcGoogle } from "react-icons/fc";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ const Login = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         sessionStorage.clear();
-        alert("Account not registered. Please contact admin.");
+        alert("Account not registered. Please register first.");
         return;
       }
 
@@ -54,13 +53,19 @@ const Login = () => {
 
   return (
     <GoogleOAuthProvider clientId="536656085214-lflgf5vpabtlh57mt6jj5f4v2qpdu6o0.apps.googleusercontent.com">
-      <div className="flex justify-center items-center h-screen bg-gray-50">
+      <div className="flex flex-col justify-center items-center h-screen bg-gray-50">
         <div className="bg-white p-10 rounded-lg shadow-lg text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Login</h1>
           <GoogleLogin
             onSuccess={handleSuccess}
             onError={() => console.error("Google Login Failed")}
           />
+        </div>
+        <div className="mt-4 text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link to={"/register"} className="text-blue-500 hover:underline">
+            Register here
+          </Link>
         </div>
       </div>
     </GoogleOAuthProvider>
