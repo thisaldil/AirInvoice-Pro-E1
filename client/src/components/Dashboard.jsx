@@ -65,10 +65,9 @@ function Dashboard({ onNavigate }) {
           <div className="flex items-center space-x-3">
             <span className="text-gray-700 font-medium">{user.name}</span>
             <img
-              src={user.picture.replace("=s96-c", "")}
+              src={user.picture.replace("=s96-c", "").replace("http://", "https://")}
               alt={user.name}
-              crossOrigin="anonymous"
-              className="w-10 h-10 max-w-full max-h-full rounded-full border border-gray-300 object-cover"
+              className="w-10 h-10 object-cover rounded-full border border-gray-300"
             />
           </div>
         )}
