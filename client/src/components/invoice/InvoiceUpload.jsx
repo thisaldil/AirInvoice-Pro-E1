@@ -28,13 +28,15 @@ function InvoiceUpload({ onUpload }) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (droppedFile.type === "application/pdf") {
         setFile(droppedFile);
         setError(null);
       } else {
-        setError("Please upload a PDF file");
+        setFile(null);
+        setError("Please upload a valid PDF file.");
       }
     }
   }, []);
@@ -46,12 +48,16 @@ function InvoiceUpload({ onUpload }) {
         setFile(selectedFile);
         setError(null);
       } else {
-        setError("Please upload a PDF file");
+        setFile(null);
+        setError("Please upload a valid PDF file.");
       }
     }
   };
 
   const extractTextFromPDF = async (file) => {
+    setIsProcessing(true);
+    setError(null);
+
     try {
       const formData = new FormData();
       formData.append("document", file);
@@ -61,24 +67,27 @@ function InvoiceUpload({ onUpload }) {
         {
           method: "POST",
           headers: {
-            Authorization: "Token 6717ce11d8eafbeb5348dbe13f1b64a9",
+            Authorization: `Token ${process.env.REACT_APP_MINDEE_API_KEY}`,
           },
           body: formData,
         }
       );
 
+      if (!response.ok) {
+        throw new Error("Failed to fetch invoice data.");
+      }
+
       const result = await response.json();
 
-      if (result.api_request && result.api_request.status === "success") {
-        const invoiceData = result.document.inference.prediction;
-        const formatted = JSON.stringify(invoiceData, null, 2);
-        onUpload({ extractedText: formatted });
+      if (result?.api_request?.status === "success") {
+        const invoiceData = result?.document?.inference?.prediction;
+        onUpload({ extractedText: JSON.stringify(invoiceData, null, 2) });
       } else {
-        setError("Failed to extract invoice data.");
+        throw new Error("Failed to extract invoice data.");
       }
     } catch (err) {
       console.error("Mindee API error:", err);
-      setError("An error occurred while sending the file to Mindee.");
+      setError("An error occurred while extracting text. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -86,13 +95,14 @@ function InvoiceUpload({ onUpload }) {
 
   const handleProcessInvoice = () => {
     if (!file) return;
-    setIsProcessing(true);
     extractTextFromPDF(file);
   };
 
   const handleRemoveFile = () => {
     setFile(null);
+    setError(null);
   };
+  console.log("Mindee API Key:", process.env.REACT_APP_MINDEE_API_KEY);
 
   return (
     <div>
