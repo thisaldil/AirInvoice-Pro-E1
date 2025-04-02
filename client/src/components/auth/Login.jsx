@@ -47,7 +47,7 @@ const Login = () => {
           })
         );
         setIsAuthenticated(true);
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       console.error("Login Error:", error);
