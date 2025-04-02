@@ -1,64 +1,113 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import bg from "../../images/bg.png";
 
 const Register = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    const handleSuccess = async (response) => {
-        try {
-            const token = response.credential;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsAuthenticated(true);
+      navigate("/dashboard");
+    }
+  }, []);
 
-            const verify = await fetch("http://localhost:5000/auth/google/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token }),
-            });
+  const handleSuccess = async (response) => {
+    try {
+      const token = response.credential;
 
-            if (!verify.ok) {
-                const msg = await verify.json();
-                alert(msg.message || "Registration failed");
-                return;
-            }
+      const verify = await fetch("http://localhost:5000/auth/google/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
 
-            const data = await verify.json();
+      if (!verify.ok) {
+        const msg = await verify.json();
+        alert(msg.message || "Registration failed");
+        return;
+      }
 
-            if (data.token) {
-                localStorage.setItem("token", data.token);
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify({
-                        name: data.user.name,
-                        email: data.user.email,
-                        picture: data.user.picture,
-                    })
-                );
-                navigate("/dashboard");
-            }
-        } catch (error) {
-            console.error("Google Registration Error:", error);
-        }
-    };
+      const data = await verify.json();
 
-    return (
-        <GoogleOAuthProvider clientId="536656085214-lflgf5vpabtlh57mt6jj5f4v2qpdu6o0.apps.googleusercontent.com">
-            <div className="flex flex-col justify-center items-center h-screen bg-gray-50">
-                <div className="bg-white p-10 rounded-lg shadow-lg text-center">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-6">Register</h1>
-                    <GoogleLogin
-                        onSuccess={handleSuccess}
-                        onError={() => alert("Google Registration Failed")}
-                    />
-                </div>
-                <div className="mt-4 text-sm text-gray-600">
-                    Already have an account?{" "}
-                    <Link to={"/login"} className="text-blue-500 hover:underline">
-                        Login here
-                    </Link>
-                </div>
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: data.user.name,
+            email: data.user.email,
+            picture: data.user.picture,
+          })
+        );
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Google Registration Error:", error);
+    }
+  };
+
+  return (
+    <GoogleOAuthProvider clientId="536656085214-lflgf5vpabtlh57mt6jj5f4v2qpdu6o0.apps.googleusercontent.com">
+      <div
+        style={{
+          backgroundImage: `url(${bg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+        className="relative flex h-screen w-full overflow-hidden bg-gray-100"
+      >
+        {/* Left Side (Branding) */}
+        <div className="hidden md:block absolute left-0 top-0 h-full w-1/2 text-white z-0">
+          <div className="flex flex-col justify-center items-center h-full px-12">
+            <motion.img
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              src="/logo.png"
+              alt="Logo"
+              className="w-72 mb-6"
+            />
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-xl leading-relaxed font-medium text-center max-w-lg text-gray-700"
+            >
+              Join AirInvoice Pro to manage your invoices with ease. Automate, track,
+              and send invoices effortlessly.
+            </motion.p>
+          </div>
+        </div>
+
+        {/* Right Side (Form) */}
+        <div className="w-full md:w-1/2 z-10 flex justify-center items-center ml-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="bg-white p-10 rounded-lg shadow-xl text-center w-full max-w-sm"
+          >
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">Register</h1>
+            <GoogleLogin
+              onSuccess={handleSuccess}
+              onError={() => alert("Google Registration Failed")}
+            />
+            <div className="mt-6 text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link to="/login" className="text-blue-500 hover:underline">
+                Login here
+              </Link>
             </div>
-        </GoogleOAuthProvider>
-    );
+          </motion.div>
+        </div>
+      </div>
+    </GoogleOAuthProvider>
+  );
 };
 
 export default Register;
