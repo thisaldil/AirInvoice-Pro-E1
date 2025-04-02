@@ -6,7 +6,6 @@ import {
   LogOutIcon,
   BoxIcon,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import logo from "../images/logo.png";
 
 function Layout({ children, currentPage, onNavigate }) {
@@ -33,12 +32,10 @@ function Layout({ children, currentPage, onNavigate }) {
     },
   ];
 
-  const navigate = useNavigate();
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   return (
