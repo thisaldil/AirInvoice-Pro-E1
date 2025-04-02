@@ -1,7 +1,23 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FileTextIcon, FileUpIcon, SendIcon, BoxIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard({ onNavigate }) {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    setUser(storedUser);
+  }, []);
+
+
   const quickActions = [
     {
       id: "upload",
@@ -43,8 +59,19 @@ function Dashboard({ onNavigate }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
-      {/* Quick Actions */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+        {user && (
+          <div className="flex items-center space-x-3">
+            <span className="text-gray-700 font-medium">{user.name}</span>
+            <img
+              src={user.picture.replace("=s96-c", "").replace("http://", "https://")}
+              alt={user.name}
+              className="w-10 h-10 object-cover rounded-full border border-gray-300"
+            />
+          </div>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {quickActions.map((action) => (
           <button
@@ -68,7 +95,6 @@ function Dashboard({ onNavigate }) {
           </button>
         ))}
       </div>
-      {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-800">Recent Invoices</h2>
@@ -114,11 +140,10 @@ function Dashboard({ onNavigate }) {
                   </td>
                   <td className="py-4 px-4">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        invoice.status === "Sent"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
+                      className={`px-2 py-1 text-xs rounded-full ${invoice.status === "Sent"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                        }`}
                     >
                       {invoice.status}
                     </span>
@@ -137,7 +162,6 @@ function Dashboard({ onNavigate }) {
           </table>
         </div>
       </div>
-      {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
@@ -161,11 +185,10 @@ function Dashboard({ onNavigate }) {
             <div className="flex justify-between items-end">
               <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
               <span
-                className={`text-sm ${
-                  stat.change.startsWith("+")
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
+                className={`text-sm ${stat.change.startsWith("+")
+                  ? "text-green-600"
+                  : "text-red-600"
+                  }`}
               >
                 {stat.change}
               </span>
