@@ -28,13 +28,15 @@ function InvoiceUpload({ onUpload }) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (droppedFile.type === "application/pdf") {
         setFile(droppedFile);
         setError(null);
       } else {
-        setError("Please upload a PDF file");
+        setFile(null);
+        setError("Please upload a valid PDF file.");
       }
     }
   }, []);
@@ -46,58 +48,85 @@ function InvoiceUpload({ onUpload }) {
         setFile(selectedFile);
         setError(null);
       } else {
-        setError("Please upload a PDF file");
+        setFile(null);
+        setError("Please upload a valid PDF file.");
       }
     }
   };
 
-  const handleRemoveFile = () => {
-    setFile(null);
+  const extractTextFromPDF = async (file) => {
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("invoice", file);
+
+      const response = await fetch("http://localhost:5000/api/invoice/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!data.success) throw new Error(data.message);
+
+      // 💡 Extract and normalize fields you want to preview
+      const prediction = data.prediction;
+
+      const formattedInvoice = {
+        bookingReference: prediction?.booking_reference?.value || "",
+        passengerName: prediction?.passenger_name?.value || "",
+        passportNumber: prediction?.passport_number?.value || "",
+        nationality: prediction?.nationality?.value || "",
+        dob: prediction?.date_of_birth?.value || "",
+        gender: prediction?.gender?.value || "",
+        totalAmount: prediction?.total_amount?.value || "",
+        paymentMethod: prediction?.payment_method?.value || "",
+        transactionId: prediction?.transaction_id?.value || "",
+        flightDetails: Array.isArray(prediction?.flight_details)
+          ? prediction.flight_details.map((flight) => ({
+              flightNumber: flight?.flight_number?.value || "",
+              from: flight?.departure_airport?.value || "",
+              to: flight?.arrival_airport?.value || "",
+              departureDate: flight?.departure_date?.value || "",
+              departureTime: flight?.departure_time?.value || "",
+              arrivalDate: flight?.arrival_date?.value || "",
+              arrivalTime: flight?.arrival_time?.value || "",
+              seatNumber: flight?.seat_number?.value || "",
+              class: flight?.class?.value || "",
+              baggageAllowance: flight?.baggage?.value || "",
+            }))
+          : [],
+      };
+
+      onUpload(formattedInvoice);
+    } catch (err) {
+      console.error("Mindee API error:", err);
+      setError("An error occurred while extracting text. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleProcessInvoice = () => {
     if (!file) return;
-    setIsProcessing(true);
-    setTimeout(() => {
-      const mockInvoiceData = {
-        airlineReference: "AB123456",
-        passengerName: "John Smith",
-        flightDetails: [
-          {
-            flight: "AA1234",
-            from: "New York (JFK)",
-            to: "London (LHR)",
-            date: "2023-07-15",
-            departureTime: "14:30",
-            arrivalTime: "02:45 +1",
-          },
-          {
-            flight: "AA1235",
-            from: "London (LHR)",
-            to: "New York (JFK)",
-            date: "2023-07-22",
-            departureTime: "10:15",
-            arrivalTime: "13:20",
-          },
-        ],
-        ticketPrice: 850.0,
-        taxes: 120.0,
-        totalAmount: 970.0,
-        currency: "USD",
-        issueDate: "2023-06-01",
-      };
-      setIsProcessing(false);
-      onUpload(mockInvoiceData);
-    }, 2000);
+    extractTextFromPDF(file);
   };
+
+  const handleRemoveFile = () => {
+    setFile(null);
+    setError(null);
+  };
+  console.log("Mindee API Key:", process.env.REACT_APP_MINDEE_API_KEY);
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Invoice</h1>
       <p className="text-gray-600 mb-8">
-        Upload an airline ticket invoice to extract its data and create a new
-        invoice with your company template.
+        Upload an invoice to extract its text.
       </p>
+
       {!file ? (
         <div
           className={`border-2 border-dashed rounded-lg p-12 text-center ${
@@ -127,7 +156,7 @@ function InvoiceUpload({ onUpload }) {
           <p className="text-sm text-gray-500 mt-4">Supported file: PDF</p>
           {error && (
             <div className="mt-4 text-red-500 bg-red-50 p-3 rounded">
-              <p>{error}</p>
+              {error}
             </div>
           )}
         </div>
@@ -163,7 +192,7 @@ function InvoiceUpload({ onUpload }) {
                 : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
-            {isProcessing ? "Processing..." : "Process Invoice"}
+            {isProcessing ? "Processing..." : "Extract Text"}
           </button>
         </div>
       )}
