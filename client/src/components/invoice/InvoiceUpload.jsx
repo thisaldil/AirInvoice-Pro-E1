@@ -60,31 +60,47 @@ function InvoiceUpload({ onUpload }) {
 
     try {
       const formData = new FormData();
-      formData.append("document", file);
+      formData.append("invoice", file);
 
-      const response = await fetch(
-        "https://api.mindee.net/v1/products/mindee/invoice/v1/predict",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Token ${process.env.REACT_APP_MINDEE_API_KEY}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/invoice/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch invoice data.");
-      }
+      const data = await response.json();
 
-      const result = await response.json();
+      if (!data.success) throw new Error(data.message);
 
-      if (result?.api_request?.status === "success") {
-        const invoiceData = result?.document?.inference?.prediction;
-        onUpload({ extractedText: JSON.stringify(invoiceData, null, 2) });
-      } else {
-        throw new Error("Failed to extract invoice data.");
-      }
+      // 💡 Extract and normalize fields you want to preview
+      const prediction = data.prediction;
+
+      const formattedInvoice = {
+        bookingReference: prediction?.booking_reference?.value || "",
+        passengerName: prediction?.passenger_name?.value || "",
+        passportNumber: prediction?.passport_number?.value || "",
+        nationality: prediction?.nationality?.value || "",
+        dob: prediction?.date_of_birth?.value || "",
+        gender: prediction?.gender?.value || "",
+        totalAmount: prediction?.total_amount?.value || "",
+        paymentMethod: prediction?.payment_method?.value || "",
+        transactionId: prediction?.transaction_id?.value || "",
+        flightDetails: Array.isArray(prediction?.flight_details)
+          ? prediction.flight_details.map((flight) => ({
+              flightNumber: flight?.flight_number?.value || "",
+              from: flight?.departure_airport?.value || "",
+              to: flight?.arrival_airport?.value || "",
+              departureDate: flight?.departure_date?.value || "",
+              departureTime: flight?.departure_time?.value || "",
+              arrivalDate: flight?.arrival_date?.value || "",
+              arrivalTime: flight?.arrival_time?.value || "",
+              seatNumber: flight?.seat_number?.value || "",
+              class: flight?.class?.value || "",
+              baggageAllowance: flight?.baggage?.value || "",
+            }))
+          : [],
+      };
+
+      onUpload(formattedInvoice);
     } catch (err) {
       console.error("Mindee API error:", err);
       setError("An error occurred while extracting text. Please try again.");

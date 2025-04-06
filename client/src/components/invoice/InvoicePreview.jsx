@@ -1,9 +1,11 @@
 import React from "react";
 import { ArrowLeftIcon, ArrowRightIcon, EditIcon } from "lucide-react";
 
-function InvoicePreview({ invoice, onContinue, onBack }) {
+function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
   const handleFieldEdit = (field, value) => {
-    console.log(`Editing ${field} to ${value}`);
+    if (onEdit) {
+      onEdit(field, value);
+    }
   };
 
   return (
@@ -12,92 +14,110 @@ function InvoicePreview({ invoice, onContinue, onBack }) {
         Review Extracted Data
       </h1>
       <p className="text-gray-600 mb-8">
-        We've extracted the following information from the invoice. Please
-        review and make any necessary corrections.
+        We've extracted the following information from the air ticket invoice.
+        Please review and make any necessary corrections.
       </p>
+
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">
           Ticket Information
         </h2>
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Airline Reference
-              </label>
-              <div className="flex">
-                <input
-                  type="text"
-                  value={invoice.airlineReference}
-                  onChange={(e) =>
-                    handleFieldEdit("airlineReference", e.target.value)
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                <button className="ml-2 text-gray-400 hover:text-blue-500">
-                  <EditIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Passenger Name
-              </label>
-              <div className="flex">
-                <input
-                  type="text"
-                  value={invoice.passengerName}
-                  onChange={(e) =>
-                    handleFieldEdit("passengerName", e.target.value)
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                <button className="ml-2 text-gray-400 hover:text-blue-500">
-                  <EditIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+            <Field
+              label="Booking Reference"
+              value={invoice.bookingReference}
+              onEdit={(val) => handleFieldEdit("bookingReference", val)}
+            />
+            <Field
+              label="Passenger Name"
+              value={invoice.passengerName}
+              onEdit={(val) => handleFieldEdit("passengerName", val)}
+            />
+            <Field
+              label="Passport Number"
+              value={invoice.passportNumber}
+              onEdit={(val) => handleFieldEdit("passportNumber", val)}
+            />
+            <Field
+              label="Nationality"
+              value={invoice.nationality}
+              onEdit={(val) => handleFieldEdit("nationality", val)}
+            />
+            <Field
+              label="Date of Birth"
+              value={invoice.dob}
+              onEdit={(val) => handleFieldEdit("dob", val)}
+            />
+            <Field
+              label="Gender"
+              value={invoice.gender}
+              onEdit={(val) => handleFieldEdit("gender", val)}
+            />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-2">
               Flight Details
             </label>
-            {invoice.flightDetails.map((flight, index) => (
-              <div key={index} className="bg-gray-50 p-4 rounded-md mb-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-medium text-gray-800">
-                    {index === 0 ? "Outbound Flight" : "Return Flight"}
-                  </h4>
-                  <span className="text-sm font-medium text-blue-600">
-                    {flight.flight}
-                  </span>
-                </div>
-                <div className="flex flex-col md:flex-row justify-between">
-                  <div className="mb-3 md:mb-0">
-                    <p className="text-sm text-gray-500">From</p>
-                    <p className="font-medium">{flight.from}</p>
-                    <p className="text-sm text-gray-600">
-                      {flight.date}, {flight.departureTime}
-                    </p>
+            {invoice?.flightDetails?.length > 0 ? (
+              invoice.flightDetails.map((flight, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-md mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-gray-800">
+                      {flight.flightNumber || `Flight #${index + 1}`}
+                    </h4>
+                    <span className="text-sm font-medium text-blue-600">
+                      {flight.class}
+                    </span>
                   </div>
-                  <div className="self-center hidden md:block">
-                    <div className="w-32 h-0.5 bg-gray-300 relative">
-                      <div className="absolute -top-2 right-0 w-2 h-2 border-t-2 border-r-2 border-gray-300 transform rotate-45"></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">From</p>
+                      <p className="font-medium">{flight.from}</p>
+                      <p className="text-sm text-gray-600">
+                        {flight.departureDate} at {flight.departureTime}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">To</p>
+                      <p className="font-medium">{flight.to}</p>
+                      <p className="text-sm text-gray-600">
+                        {flight.arrivalDate} at {flight.arrivalTime}
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">To</p>
-                    <p className="font-medium">{flight.to}</p>
-                    <p className="text-sm text-gray-600">
-                      {flight.arrivalTime}
-                    </p>
+                  <div className="mt-2 text-sm text-gray-500">
+                    Seat: {flight.seatNumber} | Baggage:{" "}
+                    {flight.baggageAllowance}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500">No flight details available.</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Field
+              label="Total Amount"
+              value={invoice.totalAmount}
+              onEdit={(val) => handleFieldEdit("totalAmount", val)}
+            />
+            <Field
+              label="Payment Method"
+              value={invoice.paymentMethod}
+              onEdit={(val) => handleFieldEdit("paymentMethod", val)}
+            />
+            <Field
+              label="Transaction ID"
+              value={invoice.transactionId}
+              onEdit={(val) => handleFieldEdit("transactionId", val)}
+            />
           </div>
         </div>
       </div>
+
       <div className="flex justify-between">
         <button
           onClick={onBack}
@@ -117,5 +137,25 @@ function InvoicePreview({ invoice, onContinue, onBack }) {
     </div>
   );
 }
+
+// Reusable input field
+const Field = ({ label, value, onEdit }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-500 mb-1">
+      {label}
+    </label>
+    <div className="flex">
+      <input
+        type="text"
+        value={value || ""}
+        onChange={(e) => onEdit(e.target.value)}
+        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+      />
+      <button className="ml-2 text-gray-400 hover:text-blue-500">
+        <EditIcon className="w-5 h-5" />
+      </button>
+    </div>
+  </div>
+);
 
 export default InvoicePreview;
