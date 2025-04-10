@@ -64,17 +64,42 @@ function InvoiceUpload({ onUpload }) {
       formData.append("invoice", file);
 
       const response = await axios.post("http://localhost:5000/invoice/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const data = response.data;
+      const raw = response.data.text;
 
-      if (!data.success) throw new Error(data.message);
+      const extract = (label) => {
+        const match = raw.match(new RegExp(`${label}:\\s*(.*)`));
+        return match ? match[1].trim() : "";
+      };
 
-      // Just send raw text for now
-      const formattedInvoice = { rawText: data.text };
+      const formattedInvoice = {
+        passengerName: extract("Passenger Name"),
+        bookingReference: extract("Booking Reference"),
+        passportNumber: extract("Passport Number"),
+        nationality: extract("Nationality"),
+        dob: extract("Date of Birth"),
+        gender: extract("Gender"),
+        totalAmount: extract("Total Amount"),
+        paymentMethod: extract("Payment Method"),
+        transactionId: extract("Transaction ID"),
+        flightDetails: [
+          {
+            flightNumber: extract("Flight Number"),
+            from: extract("From"),
+            to: extract("To"),
+            departureDate: extract("Departure Date"),
+            departureTime: extract("Departure Time"),
+            arrivalDate: extract("Arrival Date"),
+            arrivalTime: extract("Arrival Time"),
+            seatNumber: extract("Seat Number"),
+            class: extract("Class"),
+            baggageAllowance: extract("Baggage"),
+          },
+        ],
+      };
+
       onUpload(formattedInvoice);
     } catch (err) {
       console.error("OCR error:", err);
@@ -83,7 +108,6 @@ function InvoiceUpload({ onUpload }) {
       setIsProcessing(false);
     }
   };
-
 
   const handleProcessInvoice = () => {
     if (!file) return;
@@ -94,21 +118,15 @@ function InvoiceUpload({ onUpload }) {
     setFile(null);
     setError(null);
   };
-  // console.log("Mindee API Key:", process.env.REACT_APP_MINDEE_API_KEY);
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Invoice</h1>
-      <p className="text-gray-600 mb-8">
-        Upload an invoice to extract its text.
-      </p>
+      <p className="text-gray-600 mb-8">Upload an invoice to extract its text.</p>
 
       {!file ? (
         <div
-          className={`border-2 border-dashed rounded-lg p-12 text-center ${isDragging
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 hover:border-blue-400"
-            }`}
+          className={`border-2 border-dashed rounded-lg p-12 text-center ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400"}`}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -139,10 +157,7 @@ function InvoiceUpload({ onUpload }) {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-medium text-gray-800">Selected File</h3>
-            <button
-              onClick={handleRemoveFile}
-              className="text-gray-400 hover:text-red-500"
-            >
+            <button onClick={handleRemoveFile} className="text-gray-400 hover:text-red-500">
               <XIcon className="w-5 h-5" />
             </button>
           </div>
@@ -161,10 +176,7 @@ function InvoiceUpload({ onUpload }) {
           <button
             onClick={handleProcessInvoice}
             disabled={isProcessing}
-            className={`w-full py-3 rounded-md font-medium ${isProcessing
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
+            className={`w-full py-3 rounded-md font-medium ${isProcessing ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
           >
             {isProcessing ? "Processing..." : "Extract Text"}
           </button>
