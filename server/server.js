@@ -34,7 +34,7 @@ const invoiceRoutes = require("./routes/invoiceRoutes");
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/template', templateRoutes);
-app.use("/api/invoice", invoiceRoutes);
+app.use("/invoice", invoiceRoutes);
 
 // Connect to DB
 connectDB();

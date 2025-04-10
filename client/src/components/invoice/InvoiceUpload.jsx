@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { FileUpIcon, FileIcon, CheckCircleIcon, XIcon } from "lucide-react";
+import axios from "axios";
 
 function InvoiceUpload({ onUpload }) {
   const [file, setFile] = useState(null);
@@ -62,52 +63,27 @@ function InvoiceUpload({ onUpload }) {
       const formData = new FormData();
       formData.append("invoice", file);
 
-      const response = await fetch("http://localhost:5000/api/invoice/upload", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post("http://localhost:5000/invoice/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (!data.success) throw new Error(data.message);
 
-      // 💡 Extract and normalize fields you want to preview
-      const prediction = data.prediction;
-
-      const formattedInvoice = {
-        bookingReference: prediction?.booking_reference?.value || "",
-        passengerName: prediction?.passenger_name?.value || "",
-        passportNumber: prediction?.passport_number?.value || "",
-        nationality: prediction?.nationality?.value || "",
-        dob: prediction?.date_of_birth?.value || "",
-        gender: prediction?.gender?.value || "",
-        totalAmount: prediction?.total_amount?.value || "",
-        paymentMethod: prediction?.payment_method?.value || "",
-        transactionId: prediction?.transaction_id?.value || "",
-        flightDetails: Array.isArray(prediction?.flight_details)
-          ? prediction.flight_details.map((flight) => ({
-              flightNumber: flight?.flight_number?.value || "",
-              from: flight?.departure_airport?.value || "",
-              to: flight?.arrival_airport?.value || "",
-              departureDate: flight?.departure_date?.value || "",
-              departureTime: flight?.departure_time?.value || "",
-              arrivalDate: flight?.arrival_date?.value || "",
-              arrivalTime: flight?.arrival_time?.value || "",
-              seatNumber: flight?.seat_number?.value || "",
-              class: flight?.class?.value || "",
-              baggageAllowance: flight?.baggage?.value || "",
-            }))
-          : [],
-      };
-
+      // Just send raw text for now
+      const formattedInvoice = { rawText: data.text };
       onUpload(formattedInvoice);
     } catch (err) {
-      console.error("Mindee API error:", err);
-      setError("An error occurred while extracting text. Please try again.");
+      console.error("OCR error:", err);
+      setError("An error occurred while extracting text from PDF.");
     } finally {
       setIsProcessing(false);
     }
   };
+
 
   const handleProcessInvoice = () => {
     if (!file) return;
@@ -118,7 +94,7 @@ function InvoiceUpload({ onUpload }) {
     setFile(null);
     setError(null);
   };
-  console.log("Mindee API Key:", process.env.REACT_APP_MINDEE_API_KEY);
+  // console.log("Mindee API Key:", process.env.REACT_APP_MINDEE_API_KEY);
 
   return (
     <div>
@@ -129,11 +105,10 @@ function InvoiceUpload({ onUpload }) {
 
       {!file ? (
         <div
-          className={`border-2 border-dashed rounded-lg p-12 text-center ${
-            isDragging
+          className={`border-2 border-dashed rounded-lg p-12 text-center ${isDragging
               ? "border-blue-500 bg-blue-50"
               : "border-gray-300 hover:border-blue-400"
-          }`}
+            }`}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -186,11 +161,10 @@ function InvoiceUpload({ onUpload }) {
           <button
             onClick={handleProcessInvoice}
             disabled={isProcessing}
-            className={`w-full py-3 rounded-md font-medium ${
-              isProcessing
+            className={`w-full py-3 rounded-md font-medium ${isProcessing
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+              }`}
           >
             {isProcessing ? "Processing..." : "Extract Text"}
           </button>

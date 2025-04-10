@@ -1,20 +1,44 @@
+const fs = require("fs");
 const path = require("path");
-const { processInvoice } = require("../services/mindeeService");
+const pdfPoppler = require("pdf-poppler");
+const Tesseract = require("tesseract.js");
 
-const uploadInvoice = async (req, res) => {
+exports.uploadInvoice = async (req, res) => {
+  const filePath = req.file.path;
+  const outputDir = `temp_output_${Date.now()}`;
+
   try {
-    if (!req.file) throw new Error("No file received");
+    fs.mkdirSync(outputDir);
 
-    const filePath = path.resolve(req.file.path);
-    console.log("🟢 File received at:", filePath);
+    const opts = {
+      format: "png",
+      out_dir: outputDir,
+      out_prefix: "page",
+      page: null,
+    };
 
-    const prediction = await processInvoice(filePath);
+    await pdfPoppler.convert(filePath, opts);
 
-    res.json({ success: true, prediction });
+    const imageFiles = fs
+      .readdirSync(outputDir)
+      .filter((f) => f.endsWith(".png"));
+
+    let fullText = "";
+
+    for (const file of imageFiles) {
+      const imgPath = path.join(outputDir, file);
+      const {
+        data: { text },
+      } = await Tesseract.recognize(imgPath, "eng");
+      fullText += text + "\n";
+    }
+
+    fs.unlinkSync(filePath);
+    fs.rmSync(outputDir, { recursive: true });
+
+    res.status(200).json({ success: true, text: fullText });
   } catch (err) {
-    console.error("❌ Mindee error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("OCR processing error:", err);
+    res.status(500).json({ success: false, message: "OCR failed." });
   }
 };
-
-module.exports = { uploadInvoice };
