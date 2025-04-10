@@ -8,7 +8,6 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
-  console.log("User ID:", userId);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -136,7 +135,7 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/template-editor/${template._id}`);
+                      navigate(`/dashboard/template-editor/${template._id}`);
                     }}
                     className="text-gray-400 hover:text-blue-600"
                   >

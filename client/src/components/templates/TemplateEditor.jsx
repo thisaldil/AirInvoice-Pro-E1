@@ -79,7 +79,7 @@ function TemplateEditor({ onSave, onCancel }) {
       }
 
       onSave?.(response.data);
-      navigate("/template-manager");
+      navigate("/dashboard/templates");
     } catch (err) {
       console.error("Failed to save template:", err);
       alert("Error saving template. Please try again.");
