@@ -15,6 +15,7 @@ function SendOptions({ invoice, onBack }) {
   const [phone, setPhone] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  console.log(invoice._id);
 
   useEffect(() => {
     const fetchInvoice = async () => {

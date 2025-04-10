@@ -72,19 +72,24 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
 
     const pdfBytes = await doc.save();
     const base64PDF = btoa(
-      new Uint8Array(pdfBytes)
-        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+      new Uint8Array(pdfBytes).reduce((data, byte) => data + String.fromCharCode(byte), "")
     );
 
     const userId = localStorage.getItem("userId");
 
     try {
-      await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
+      const res = await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
         userId,
         pdfUrl: base64PDF,
       });
 
-      onSelectTemplate(selectedTemplate);
+      const invoiceId = res.data.invoice._id;
+
+      onSelectTemplate({
+        template: selectedTemplate,
+        data: invoiceData,
+        invoiceId,
+      });
     } catch (err) {
       console.error("Failed to save invoice:", err);
       alert("Failed to save invoice. Please try again.");
