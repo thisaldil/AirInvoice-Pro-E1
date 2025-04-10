@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SaveIcon,
   XIcon,
@@ -8,12 +8,14 @@ import {
   TypeIcon,
 } from "lucide-react";
 
+import logo from '../../images/logo-placeholder.jpg';
+import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
+
 function TemplateEditor({ onSave, onCancel }) {
   const [templateName, setTemplateName] = useState("New Template");
   const [companyName, setCompanyName] = useState("Your Company Name");
-  const [companyLogo, setCompanyLogo] = useState(
-    "https://via.placeholder.com/150x50?text=Your+Logo"
-  );
+  const [companyLogo, setCompanyLogo] = useState(logo);
   const [companyAddress, setCompanyAddress] = useState(
     "123 Business Street\nCity, State 12345\nPhone: (123) 456-7890\nEmail: info@yourcompany.com"
   );
@@ -21,10 +23,36 @@ function TemplateEditor({ onSave, onCancel }) {
   const [showFooter, setShowFooter] = useState(true);
   const [footerText, setFooterText] = useState("Thank you for your business!");
   const [selectedSection, setSelectedSection] = useState(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const userId = localStorage.getItem("userId");
 
-  const handleSave = () => {
-    const newTemplate = {
-      id: Date.now(),
+  useEffect(() => {
+    if (id) {
+      setIsEditing(true);
+      axios.get(`http://localhost:5000/template/getTemplateById/${id}`)
+        .then((res) => {
+          const t = res.data;
+          setTemplateName(t.name);
+          setCompanyName(t.company.name);
+          setCompanyLogo(t.company.logo);
+          setCompanyAddress(t.company.address);
+          setAccentColor(t.design.accentColor);
+          setShowFooter(t.design.showFooter);
+          setFooterText(t.design.footerText);
+        })
+        .catch((err) => {
+          console.error("Error loading template:", err);
+          alert("Failed to load template for editing.");
+          navigate("/template-manager");
+        });
+    }
+  }, [id]);
+
+  const handleSave = async () => {
+    const updatedTemplate = {
+      userId,
       name: templateName,
       description: "Custom invoice template",
       isDefault: false,
@@ -39,7 +67,23 @@ function TemplateEditor({ onSave, onCancel }) {
         footerText,
       },
     };
-    onSave(newTemplate);
+
+    try {
+      let response;
+      if (isEditing) {
+        response = await axios.put(`http://localhost:5000/template/updateTemplate/${id}`, updatedTemplate);
+        alert("Template updated successfully!");
+      } else {
+        response = await axios.post("http://localhost:5000/template/createTemplate", updatedTemplate);
+        alert("Template created successfully!");
+      }
+
+      onSave?.(response.data);
+      navigate("/dashboard/templates");
+    } catch (err) {
+      console.error("Failed to save template:", err);
+      alert("Error saving template. Please try again.");
+    }
   };
 
   const handleLogoChange = (e) => {
@@ -85,9 +129,8 @@ function TemplateEditor({ onSave, onCancel }) {
             <div className="border rounded-md overflow-hidden">
               {/* Header */}
               <div
-                className={`p-6 border-b flex justify-between items-start ${
-                  selectedSection === "header" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("header")}
               >
                 <div>
@@ -120,9 +163,8 @@ function TemplateEditor({ onSave, onCancel }) {
               </div>
               {/* Company & Client Info */}
               <div
-                className={`p-6 grid grid-cols-2 gap-6 border-b ${
-                  selectedSection === "info" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 grid grid-cols-2 gap-6 border-b ${selectedSection === "info" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("info")}
               >
                 <div>
@@ -141,9 +183,8 @@ function TemplateEditor({ onSave, onCancel }) {
               </div>
               {/* Flight Details */}
               <div
-                className={`p-6 border-b ${
-                  selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 border-b ${selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("flights")}
               >
                 <h3
@@ -209,9 +250,8 @@ function TemplateEditor({ onSave, onCancel }) {
               </div>
               {/* Pricing */}
               <div
-                className={`p-6 border-b ${
-                  selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 border-b ${selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("pricing")}
               >
                 <h3
@@ -244,9 +284,8 @@ function TemplateEditor({ onSave, onCancel }) {
               {/* Footer */}
               {showFooter && (
                 <div
-                  className={`p-6 text-center ${
-                    selectedSection === "footer" ? "ring-2 ring-blue-500" : ""
-                  }`}
+                  className={`p-6 text-center ${selectedSection === "footer" ? "ring-2 ring-blue-500" : ""
+                    }`}
                   onClick={() => setSelectedSection("footer")}
                   style={{
                     backgroundColor: accentColor + "10",
@@ -400,11 +439,10 @@ function TemplateEditor({ onSave, onCancel }) {
                   <button
                     key={section.id}
                     onClick={() => setSelectedSection(section.id)}
-                    className={`flex items-center w-full p-2 rounded-md text-left ${
-                      selectedSection === section.id
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`flex items-center w-full p-2 rounded-md text-left ${selectedSection === section.id
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     <section.icon className="w-4 h-4 mr-2" />
                     <span>{section.label}</span>

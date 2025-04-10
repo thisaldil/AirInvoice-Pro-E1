@@ -26,14 +26,15 @@ app.use(passport.session());
 require("./models/User");
 require("./services/passport");
 
-// Routes
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-const invoiceRoutes = require("./routes/invoiceRoutes"); // ✅ Add this line
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const templateRoutes = require('./routes/templateRoutes');
+const invoiceRoutes = require("./routes/invoiceRoutes");
 
-app.use("/auth", authRoutes);
-app.use("/user", userRoutes);
-app.use("/api/invoice", invoiceRoutes); // ✅ Mount invoice route
+app.use('/auth', authRoutes);
+app.use('/user', userRoutes);
+app.use('/template', templateRoutes);
+app.use("/api/invoice", invoiceRoutes);
 
 // Connect to DB
 connectDB();

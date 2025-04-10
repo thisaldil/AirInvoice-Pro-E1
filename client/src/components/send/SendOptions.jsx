@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import {
   DownloadIcon,
   MailIcon,
@@ -17,15 +18,23 @@ function SendOptions({ invoice, onBack }) {
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
+    try {
+      if (sendMethod === "email") {
+        await axios.post("http://localhost:5000/user/sendInvoiceEmail", {
+          email,
+          // pdfUrl: invoice?.pdfUrl,
+          pdfUrl: "https://res.cloudinary.com/dnvppgx1r/image/upload/v1743588156/Invoice_2086261185_uf4afd.pdf",
+        });
+      }
       setIsSent(true);
-      setTimeout(() => {
-        setIsSent(false);
-      }, 3000);
-    }, 2000);
+      setTimeout(() => setIsSent(false), 3000);
+    } catch (err) {
+      alert("Failed to send invoice. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
