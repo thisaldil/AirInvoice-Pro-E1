@@ -9,7 +9,6 @@ import TemplateEditor from "./components/templates/TemplateEditor.jsx";
 import SendOptions from "./components/send/SendOptions.jsx";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register.jsx";
-import { Outlet } from "react-router-dom";
 
 function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
@@ -69,10 +68,9 @@ function AppWrapper() {
           element={
             <TemplateManager
               invoiceData={uploadedInvoice}
-              onSelectTemplate={({ template, invoiceId }) => {
+              onSelectTemplate={({ template }) => {
                 setSelectedTemplate(template);
-                setGeneratedInvoice({ template, data: uploadedInvoice, invoiceId });
-                navigate("/dashboard/send");
+                navigate(`/dashboard/template-editor/${template._id}`);
               }}
               onCreateTemplate={() => navigate("/dashboard/template-editor")}
             />
@@ -96,9 +94,11 @@ function AppWrapper() {
           path="template-editor/:id"
           element={
             <TemplateEditor
+              invoiceData={uploadedInvoice}
               onSave={(template) => {
                 setSelectedTemplate(template);
-                navigate("/dashboard/templates");
+                setGeneratedInvoice({ template, data: uploadedInvoice });
+                navigate("/dashboard/send");
               }}
               onCancel={() => navigate("/dashboard/templates")}
             />

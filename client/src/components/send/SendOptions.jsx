@@ -123,8 +123,8 @@ function SendOptions({ invoice, onBack }) {
                   <button
                     onClick={() => setSendMethod("whatsapp")}
                     className={`flex items-center w-full p-3 border rounded-md ${sendMethod === "whatsapp"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300 hover:border-blue-300 hover:bg-blue-50"
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-300 hover:border-green-300 hover:bg-green-50"
                       }`}
                   >
                     <div
@@ -179,7 +179,7 @@ function SendOptions({ invoice, onBack }) {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+1 (123) 456-7890"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
               )}

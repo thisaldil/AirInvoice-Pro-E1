@@ -55,6 +55,8 @@ exports.saveInvoiceDetails = async (req, res) => {
     return res.status(400).json({ error: "All fields are required" });
   }
 
+  console.log("PDF base64 size (bytes):", Buffer.byteLength(req.body.pdfUrl, 'base64'));
+
   try {
     const invoice = new Invoice({ userId, pdfUrl });
     await invoice.save();

@@ -4,11 +4,13 @@ const cors = require("cors");
 const session = require("express-session");
 const passport = require("passport");
 const connectDB = require("./database");
+const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 // Session setup
 app.use(
   session({

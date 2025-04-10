@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from "react";
-import {
-  SaveIcon,
-  XIcon,
-  ImageIcon,
-  PlusIcon,
-  LayoutIcon,
-  TypeIcon,
-} from "lucide-react";
-
+import React, { useState, useEffect, useRef } from "react";
+import { SaveIcon, XIcon, PlusIcon, LayoutIcon, TypeIcon } from "lucide-react";
 import logo from '../../images/logo-placeholder.jpg';
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
-function TemplateEditor({ onSave, onCancel }) {
+function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const [templateName, setTemplateName] = useState("New Template");
   const [companyName, setCompanyName] = useState("Your Company Name");
   const [companyLogo, setCompanyLogo] = useState(logo);
@@ -27,6 +21,7 @@ function TemplateEditor({ onSave, onCancel }) {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const userId = localStorage.getItem("userId");
+  const previewRef = useRef();
 
   useEffect(() => {
     if (id) {
@@ -69,6 +64,25 @@ function TemplateEditor({ onSave, onCancel }) {
     };
 
     try {
+      const canvas = await html2canvas(previewRef.current);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "pt", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      const pdfBase64 = pdf.output("datauristring").split(",")[1];
+
+      if (invoiceData) {
+        await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
+          userId,
+          pdfUrl: pdfBase64,
+        });
+        navigate("/dashboard/send");
+        return;
+      }
+
       let response;
       if (isEditing) {
         response = await axios.put(`http://localhost:5000/template/updateTemplate/${id}`, updatedTemplate);
@@ -81,8 +95,8 @@ function TemplateEditor({ onSave, onCancel }) {
       onSave?.(response.data);
       navigate("/dashboard/templates");
     } catch (err) {
-      console.error("Failed to save template:", err);
-      alert("Error saving template. Please try again.");
+      console.error("Failed to save template or PDF:", err);
+      alert("Error saving template or generating PDF. Please try again.");
     }
   };
 
@@ -97,6 +111,7 @@ function TemplateEditor({ onSave, onCancel }) {
       reader.readAsDataURL(e.target.files[0]);
     }
   };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -114,13 +129,13 @@ function TemplateEditor({ onSave, onCancel }) {
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
           >
             <SaveIcon className="w-4 h-4 mr-2" />
-            Save Template
+            {invoiceData ? "Continue" : "Save Template"}
           </button>
         </div>
       </div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Template Preview */}
-        <div className="lg:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
+        <div ref={previewRef} className="lg:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 bg-gray-50 border-b">
             <h2 className="font-medium text-gray-800">Preview</h2>
           </div>
@@ -158,7 +173,13 @@ function TemplateEditor({ onSave, onCancel }) {
                     INVOICE
                   </h1>
                   <p className="text-gray-500">#INV-2023-001</p>
-                  <p className="text-gray-500">Date: June 15, 2023</p>
+                  <p className="text-gray-500">
+                    {new Date().toLocaleDateString("en-US", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
                 </div>
               </div>
               {/* Company & Client Info */}
@@ -175,10 +196,11 @@ function TemplateEditor({ onSave, onCancel }) {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-2">To</h3>
-                  <p className="font-medium">John Smith</p>
-                  <p>123 Client Street</p>
-                  <p>Client City, State 54321</p>
-                  <p>Email: client@example.com</p>
+                  <p className="font-medium flex justify-between">{invoiceData?.passengerName}</p>
+                  <p className="flex justify-between">Passport: {invoiceData?.passportNumber || '--'}</p>
+                  <p className="flex justify-between">Nationality: {invoiceData?.nationality || '--'}</p>
+                  <p className="flex justify-between">DOB: {invoiceData?.dob || '--'}</p>
+                  <p className="flex justify-between">Gender: {invoiceData?.gender || '--'}</p>
                 </div>
               </div>
               {/* Flight Details */}
@@ -195,58 +217,31 @@ function TemplateEditor({ onSave, onCancel }) {
                 >
                   Flight Details
                 </h3>
-                <div className="space-y-6">
-                  <div className="bg-gray-50 p-4 rounded-md">
+                {invoiceData?.flightDetails?.map((flight, i) => (
+                  <div key={i} className="bg-gray-50 p-4 rounded-md">
                     <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">Outbound Flight</h4>
-                      <span
-                        className="text-sm font-medium"
-                        style={{
-                          color: accentColor,
-                        }}
-                      >
-                        AA1234
+                      <h4 className="font-medium">Flight #{i + 1}</h4>
+                      <span className="text-sm font-medium" style={{ color: accentColor }}>
+                        {flight.flightNumber}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <div>
                         <p className="text-sm text-gray-500">From</p>
-                        <p className="font-medium">New York (JFK)</p>
-                        <p className="text-sm">July 15, 2023, 14:30</p>
+                        <p className="font-medium">{flight.from}</p>
+                        <p className="text-sm">{flight.departureDate} {flight.departureTime}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-500">To</p>
-                        <p className="font-medium">London (LHR)</p>
-                        <p className="text-sm">July 16, 2023, 02:45</p>
+                        <p className="font-medium">{flight.to}</p>
+                        <p className="text-sm">{flight.arrivalDate} {flight.arrivalTime}</p>
                       </div>
+                    </div>
+                    <div className="text-sm text-gray-500 mt-2">
+                      Seat: {flight.seatNumber} | Class: {flight.class} | Baggage: {flight.baggageAllowance}
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">Return Flight</h4>
-                      <span
-                        className="text-sm font-medium"
-                        style={{
-                          color: accentColor,
-                        }}
-                      >
-                        AA1235
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">From</p>
-                        <p className="font-medium">London (LHR)</p>
-                        <p className="text-sm">July 22, 2023, 10:15</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">To</p>
-                        <p className="font-medium">New York (JFK)</p>
-                        <p className="text-sm">July 22, 2023, 13:20</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
               {/* Pricing */}
               <div
@@ -264,20 +259,16 @@ function TemplateEditor({ onSave, onCancel }) {
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span>Ticket Price</span>
-                    <span>$850.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Taxes & Fees</span>
-                    <span>$120.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Service Fee</span>
-                    <span>$50.00</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t font-medium">
                     <span>Total Amount</span>
-                    <span>$1,020.00</span>
+                    <span>{invoiceData?.totalAmount || "--"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Payment Method</span>
+                    <span>{invoiceData?.paymentMethod || "--"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Transaction ID</span>
+                    <span>{invoiceData?.transactionId || "--"}</span>
                   </div>
                 </div>
               </div>
