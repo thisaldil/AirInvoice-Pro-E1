@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon, CheckIcon, EditIcon, TrashIcon } from "lucide-react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
+  console.log("User ID:", userId);
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/template/getTemplates");
+        const res = await axios.get(`http://localhost:5000/template/getTemplates/${userId}`);
         setTemplates(res.data);
         const defaultTemplate = res.data.find((t) => t.isDefault);
         if (defaultTemplate) setSelectedTemplateId(defaultTemplate._id);
@@ -132,7 +136,7 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log("Edit template", template._id);
+                      navigate(`/template-editor/${template._id}`);
                     }}
                     className="text-gray-400 hover:text-blue-600"
                   >

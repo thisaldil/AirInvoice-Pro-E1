@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SaveIcon,
   XIcon,
@@ -10,6 +10,7 @@ import {
 
 import logo from '../../images/logo-placeholder.jpg';
 import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
 
 function TemplateEditor({ onSave, onCancel }) {
   const [templateName, setTemplateName] = useState("New Template");
@@ -22,9 +23,36 @@ function TemplateEditor({ onSave, onCancel }) {
   const [showFooter, setShowFooter] = useState(true);
   const [footerText, setFooterText] = useState("Thank you for your business!");
   const [selectedSection, setSelectedSection] = useState(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+  const userId = localStorage.getItem("userId");
+
+  useEffect(() => {
+    if (id) {
+      setIsEditing(true);
+      axios.get(`http://localhost:5000/template/getTemplateById/${id}`)
+        .then((res) => {
+          const t = res.data;
+          setTemplateName(t.name);
+          setCompanyName(t.company.name);
+          setCompanyLogo(t.company.logo);
+          setCompanyAddress(t.company.address);
+          setAccentColor(t.design.accentColor);
+          setShowFooter(t.design.showFooter);
+          setFooterText(t.design.footerText);
+        })
+        .catch((err) => {
+          console.error("Error loading template:", err);
+          alert("Failed to load template for editing.");
+          navigate("/template-manager");
+        });
+    }
+  }, [id]);
 
   const handleSave = async () => {
-    const newTemplate = {
+    const updatedTemplate = {
+      userId,
       name: templateName,
       description: "Custom invoice template",
       isDefault: false,
@@ -41,9 +69,17 @@ function TemplateEditor({ onSave, onCancel }) {
     };
 
     try {
-      const response = await axios.post("http://localhost:5000/template/createTemplate", newTemplate);
-      onSave(response.data);
-      alert("Template saved successfully!");
+      let response;
+      if (isEditing) {
+        response = await axios.put(`http://localhost:5000/template/updateTemplate/${id}`, updatedTemplate);
+        alert("Template updated successfully!");
+      } else {
+        response = await axios.post("http://localhost:5000/template/createTemplate", updatedTemplate);
+        alert("Template created successfully!");
+      }
+
+      onSave?.(response.data);
+      navigate("/template-manager");
     } catch (err) {
       console.error("Failed to save template:", err);
       alert("Error saving template. Please try again.");

@@ -15,10 +15,10 @@ exports.createTemplate = async (req, res) => {
     }
 };
 
-//get all templates
+//get all templates by user id
 exports.getTemplates = async (req, res) => {
     try {
-        const templates = await Template.find({});
+        const templates = await Template.find({ userId: req.params.userId });
         res.status(200).json(templates);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch templates" });
