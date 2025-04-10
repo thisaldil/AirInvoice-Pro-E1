@@ -8,12 +8,12 @@ import {
   TypeIcon,
 } from "lucide-react";
 
+import logo from '../../images/logo-placeholder.jpg';
+
 function TemplateEditor({ onSave, onCancel }) {
   const [templateName, setTemplateName] = useState("New Template");
   const [companyName, setCompanyName] = useState("Your Company Name");
-  const [companyLogo, setCompanyLogo] = useState(
-    "https://via.placeholder.com/150x50?text=Your+Logo"
-  );
+  const [companyLogo, setCompanyLogo] = useState(logo);
   const [companyAddress, setCompanyAddress] = useState(
     "123 Business Street\nCity, State 12345\nPhone: (123) 456-7890\nEmail: info@yourcompany.com"
   );
@@ -85,9 +85,8 @@ function TemplateEditor({ onSave, onCancel }) {
             <div className="border rounded-md overflow-hidden">
               {/* Header */}
               <div
-                className={`p-6 border-b flex justify-between items-start ${
-                  selectedSection === "header" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("header")}
               >
                 <div>
@@ -120,9 +119,8 @@ function TemplateEditor({ onSave, onCancel }) {
               </div>
               {/* Company & Client Info */}
               <div
-                className={`p-6 grid grid-cols-2 gap-6 border-b ${
-                  selectedSection === "info" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 grid grid-cols-2 gap-6 border-b ${selectedSection === "info" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("info")}
               >
                 <div>
@@ -141,9 +139,8 @@ function TemplateEditor({ onSave, onCancel }) {
               </div>
               {/* Flight Details */}
               <div
-                className={`p-6 border-b ${
-                  selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 border-b ${selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("flights")}
               >
                 <h3
@@ -209,9 +206,8 @@ function TemplateEditor({ onSave, onCancel }) {
               </div>
               {/* Pricing */}
               <div
-                className={`p-6 border-b ${
-                  selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
-                }`}
+                className={`p-6 border-b ${selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
+                  }`}
                 onClick={() => setSelectedSection("pricing")}
               >
                 <h3
@@ -244,9 +240,8 @@ function TemplateEditor({ onSave, onCancel }) {
               {/* Footer */}
               {showFooter && (
                 <div
-                  className={`p-6 text-center ${
-                    selectedSection === "footer" ? "ring-2 ring-blue-500" : ""
-                  }`}
+                  className={`p-6 text-center ${selectedSection === "footer" ? "ring-2 ring-blue-500" : ""
+                    }`}
                   onClick={() => setSelectedSection("footer")}
                   style={{
                     backgroundColor: accentColor + "10",
@@ -400,11 +395,10 @@ function TemplateEditor({ onSave, onCancel }) {
                   <button
                     key={section.id}
                     onClick={() => setSelectedSection(section.id)}
-                    className={`flex items-center w-full p-2 rounded-md text-left ${
-                      selectedSection === section.id
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`flex items-center w-full p-2 rounded-md text-left ${selectedSection === section.id
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     <section.icon className="w-4 h-4 mr-2" />
                     <span>{section.label}</span>

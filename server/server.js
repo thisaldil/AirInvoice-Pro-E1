@@ -24,9 +24,11 @@ require('./services/passport');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const templateRoutes = require('./routes/templateRoutes');
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/template', templateRoutes);
 
 connectDB();
 
