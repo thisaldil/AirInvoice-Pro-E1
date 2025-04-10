@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import logo from '../../images/logo-placeholder.jpg';
+import axios from "axios";
 
 function TemplateEditor({ onSave, onCancel }) {
   const [templateName, setTemplateName] = useState("New Template");
@@ -22,9 +23,8 @@ function TemplateEditor({ onSave, onCancel }) {
   const [footerText, setFooterText] = useState("Thank you for your business!");
   const [selectedSection, setSelectedSection] = useState(null);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newTemplate = {
-      id: Date.now(),
       name: templateName,
       description: "Custom invoice template",
       isDefault: false,
@@ -39,7 +39,15 @@ function TemplateEditor({ onSave, onCancel }) {
         footerText,
       },
     };
-    onSave(newTemplate);
+
+    try {
+      const response = await axios.post("http://localhost:5000/template/createTemplate", newTemplate);
+      onSave(response.data);
+      alert("Template saved successfully!");
+    } catch (err) {
+      console.error("Failed to save template:", err);
+      alert("Error saving template. Please try again.");
+    }
   };
 
   const handleLogoChange = (e) => {
