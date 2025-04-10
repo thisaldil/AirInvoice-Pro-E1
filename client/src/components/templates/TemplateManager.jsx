@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { PlusIcon, CheckIcon, EditIcon, TrashIcon } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { PDFDocument } from 'pdf-lib';
 
-function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
+function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const navigate = useNavigate();
@@ -61,10 +62,32 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
     }
   };
 
-  const handleSelectTemplate = () => {
+  const handleSelectTemplate = async () => {
     const selectedTemplate = templates.find((t) => t._id === selectedTemplateId);
-    if (selectedTemplate) {
+    if (!selectedTemplate) return;
+
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([600, 800]);
+    page.drawText("Your invoice data here...");
+
+    const pdfBytes = await doc.save();
+    const base64PDF = btoa(
+      new Uint8Array(pdfBytes)
+        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+
+    const userId = localStorage.getItem("userId");
+
+    try {
+      await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
+        userId,
+        pdfUrl: base64PDF,
+      });
+
       onSelectTemplate(selectedTemplate);
+    } catch (err) {
+      console.error("Failed to save invoice:", err);
+      alert("Failed to save invoice. Please try again.");
     }
   };
 

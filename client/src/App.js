@@ -54,6 +54,12 @@ function AppWrapper() {
               invoice={uploadedInvoice}
               onContinue={() => navigate("/dashboard/templates")}
               onBack={() => navigate("/dashboard/upload")}
+              onEdit={(field, value) => {
+                setUploadedInvoice((prev) => ({
+                  ...prev,
+                  [field]: value,
+                }));
+              }}
             />
           }
         />
@@ -62,6 +68,7 @@ function AppWrapper() {
           path="templates"
           element={
             <TemplateManager
+              invoiceData={uploadedInvoice}
               onSelectTemplate={(template) => {
                 setSelectedTemplate(template);
                 setGeneratedInvoice({ template, data: uploadedInvoice });

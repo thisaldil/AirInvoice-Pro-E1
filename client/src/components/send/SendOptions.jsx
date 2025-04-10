@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   DownloadIcon,
@@ -9,23 +9,35 @@ import {
 } from "lucide-react";
 
 function SendOptions({ invoice, onBack }) {
-  const [previewUrl, setPreviewUrl] = useState(
-    "https://images.unsplash.com/photo-1601581987809-a874a81309c9?q=80&w=1000&auto=format&fit=crop"
-  );
+  const [invoiceData, setInvoiceData] = useState(null);
   const [sendMethod, setSendMethod] = useState(null);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
+  useEffect(() => {
+    const fetchInvoice = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByInvoiceId/${invoice.invoiceId}`);
+        setInvoiceData(res.data);
+      } catch (err) {
+        console.error("Failed to load invoice preview", err);
+      }
+    };
+
+    if (invoice?.invoiceId) {
+      fetchInvoice();
+    }
+  }, [invoice?.invoiceId]);
+
   const handleSend = async () => {
     setIsSending(true);
     try {
       if (sendMethod === "email") {
-        await axios.post("http://localhost:5000/user/sendInvoiceEmail", {
+        await axios.post("http://localhost:5000/invoice/sendInvoiceEmail", {
           email,
-          // pdfUrl: invoice?.pdfUrl,
-          pdfUrl: "https://res.cloudinary.com/dnvppgx1r/image/upload/v1743588156/Invoice_2086261185_uf4afd.pdf",
+          pdfUrl: invoiceData?.pdfUrl,
         });
       }
       setIsSent(true);
@@ -48,17 +60,29 @@ function SendOptions({ invoice, onBack }) {
         <div className="md:w-1/2 bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
             <h2 className="font-medium text-gray-800">Invoice Preview</h2>
-            <button className="text-blue-600 hover:text-blue-800 flex items-center text-sm">
-              <DownloadIcon className="w-4 h-4 mr-1" />
-              Download PDF
-            </button>
+            {invoiceData?.pdfUrl && (
+              <a
+                href={`data:application/pdf;base64,${invoiceData.pdfUrl}`}
+                download="invoice.pdf"
+                className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
+              >
+                <DownloadIcon className="w-4 h-4 mr-1" />
+                Download PDF
+              </a>
+            )}
           </div>
           <div className="p-4 flex justify-center">
-            <img
-              src={previewUrl}
-              alt="Invoice Preview"
-              className="max-w-full border shadow-sm rounded"
-            />
+            {invoiceData?.pdfUrl ? (
+              <iframe
+                src={`data:application/pdf;base64,${invoiceData.pdfUrl}`}
+                title="PDF Preview"
+                width="100%"
+                height="500px"
+                className="border rounded"
+              />
+            ) : (
+              <p className="text-gray-500">Loading preview...</p>
+            )}
           </div>
         </div>
         <div className="md:w-1/2 bg-white rounded-lg shadow-md">
@@ -74,23 +98,20 @@ function SendOptions({ invoice, onBack }) {
                 <div className="space-y-3">
                   <button
                     onClick={() => setSendMethod("email")}
-                    className={`flex items-center w-full p-3 border rounded-md ${
-                      sendMethod === "email"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-300 hover:border-blue-300 hover:bg-blue-50"
-                    }`}
+                    className={`flex items-center w-full p-3 border rounded-md ${sendMethod === "email"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300 hover:border-blue-300 hover:bg-blue-50"
+                      }`}
                   >
                     <div
-                      className={`p-2 rounded-full mr-4 ${
-                        sendMethod === "email" ? "bg-blue-100" : "bg-gray-100"
-                      }`}
+                      className={`p-2 rounded-full mr-4 ${sendMethod === "email" ? "bg-blue-100" : "bg-gray-100"
+                        }`}
                     >
                       <MailIcon
-                        className={`w-5 h-5 ${
-                          sendMethod === "email"
-                            ? "text-blue-600"
-                            : "text-gray-500"
-                        }`}
+                        className={`w-5 h-5 ${sendMethod === "email"
+                          ? "text-blue-600"
+                          : "text-gray-500"
+                          }`}
                       />
                     </div>
                     <div className="flex-1">
@@ -107,25 +128,22 @@ function SendOptions({ invoice, onBack }) {
                   </button>
                   <button
                     onClick={() => setSendMethod("whatsapp")}
-                    className={`flex items-center w-full p-3 border rounded-md ${
-                      sendMethod === "whatsapp"
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-300 hover:border-blue-300 hover:bg-blue-50"
-                    }`}
+                    className={`flex items-center w-full p-3 border rounded-md ${sendMethod === "whatsapp"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300 hover:border-blue-300 hover:bg-blue-50"
+                      }`}
                   >
                     <div
-                      className={`p-2 rounded-full mr-4 ${
-                        sendMethod === "whatsapp"
-                          ? "bg-blue-100"
-                          : "bg-gray-100"
-                      }`}
+                      className={`p-2 rounded-full mr-4 ${sendMethod === "whatsapp"
+                        ? "bg-blue-100"
+                        : "bg-gray-100"
+                        }`}
                     >
                       <PhoneIcon
-                        className={`w-5 h-5 ${
-                          sendMethod === "whatsapp"
-                            ? "text-blue-600"
-                            : "text-gray-500"
-                        }`}
+                        className={`w-5 h-5 ${sendMethod === "whatsapp"
+                          ? "text-blue-600"
+                          : "text-gray-500"
+                          }`}
                       />
                     </div>
                     <div className="flex-1">
@@ -193,14 +211,13 @@ function SendOptions({ invoice, onBack }) {
                     (sendMethod === "whatsapp" && !phone) ||
                     isSending
                   }
-                  className={`px-6 py-2 rounded-md ${
-                    !sendMethod ||
+                  className={`px-6 py-2 rounded-md ${!sendMethod ||
                     (sendMethod === "email" && !email) ||
                     (sendMethod === "whatsapp" && !phone) ||
                     isSending
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
                 >
                   {isSending ? "Sending..." : "Send Invoice"}
                 </button>
