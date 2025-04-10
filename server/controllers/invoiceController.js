@@ -113,22 +113,17 @@ exports.sendInvoiceEmail = async (req, res) => {
     return res.status(400).json({ error: "Valid recipient email is required" });
   }
 
-  if (!pdfUrl) {
-    return res.status(400).json({ error: "PDF URL is required" });
+  if (!pdfUrl || typeof pdfUrl !== "string") {
+    return res.status(400).json({ error: "Valid base64 PDF is required" });
   }
 
   const fileName = `${uuidv4()}.pdf`;
   const tempPath = path.join(__dirname, "..", "temp", fileName);
 
   try {
-    const response = await axios.get(pdfUrl, { responseType: "stream" });
-    const writer = fs.createWriteStream(tempPath);
-
-    await new Promise((resolve, reject) => {
-      response.data.pipe(writer);
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
+    // Decode and save base64 PDF
+    const base64Data = pdfUrl.replace(/^data:application\/pdf;base64,/, "");
+    fs.writeFileSync(tempPath, Buffer.from(base64Data, "base64"));
 
     const transporter = nodemailer.createTransport({
       service: "gmail",

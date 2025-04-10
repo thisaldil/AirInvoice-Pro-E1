@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  DownloadIcon,
-  MailIcon,
-  PhoneIcon,
-  ArrowLeftIcon,
-  CheckIcon,
-} from "lucide-react";
+import { DownloadIcon, MailIcon, PhoneIcon, ArrowLeftIcon, CheckIcon } from "lucide-react";
 
 function SendOptions({ invoice, onBack }) {
   const [invoiceData, setInvoiceData] = useState(null);
@@ -15,7 +9,6 @@ function SendOptions({ invoice, onBack }) {
   const [phone, setPhone] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
-  console.log(invoice._id);
 
   useEffect(() => {
     const fetchInvoice = async () => {

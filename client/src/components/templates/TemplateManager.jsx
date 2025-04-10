@@ -75,7 +75,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
         pdfUrl: base64PDF,
       });
 
-      onSelectTemplate(selectedTemplate, res.data.invoice._id);
+      onSelectTemplate({ template: selectedTemplate, invoiceId: res.data.invoice._id });
     } catch (err) {
       console.error("Failed to save invoice:", err);
       alert("Failed to save invoice. Please try again.");
@@ -109,8 +109,8 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           <div
             key={template._id}
             onClick={() => setSelectedTemplateId(template._id)}
-            className={`relative border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedTemplateId === template._id
-              ? "ring-2 ring-blue-500 border-transparent"
+            className={`relative border rounded-lg overflow-hidden transition-all ${selectedTemplateId === template._id && invoiceData
+              ? "cursor-pointer ring-2 ring-blue-500 border-transparent"
               : "border-gray-200 hover:border-blue-200"
               }`}
           >
@@ -169,7 +169,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
                 )}
               </div>
             </div>
-            {selectedTemplateId === template._id && invoiceData &&(
+            {selectedTemplateId === template._id && invoiceData && (
               <div className="absolute inset-0 bg-blue-500 bg-opacity-10 flex items-center justify-center">
                 <div className="bg-white rounded-full p-2 shadow-md">
                   <CheckIcon className="w-6 h-6 text-blue-600" />
