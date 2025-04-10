@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PlusIcon, CheckIcon, EditIcon, TrashIcon } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { PDFDocument } from 'pdf-lib';
+import { generateInvoicePDF } from "../../utils/generateInvoicePDF";
 
 function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
   const [templates, setTemplates] = useState([]);
@@ -66,30 +66,16 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
     const selectedTemplate = templates.find((t) => t._id === selectedTemplateId);
     if (!selectedTemplate) return;
 
-    const doc = await PDFDocument.create();
-    const page = doc.addPage([600, 800]);
-    page.drawText("Your invoice data here...");
-
-    const pdfBytes = await doc.save();
-    const base64PDF = btoa(
-      new Uint8Array(pdfBytes).reduce((data, byte) => data + String.fromCharCode(byte), "")
-    );
-
-    const userId = localStorage.getItem("userId");
-
     try {
+      const base64PDF = await generateInvoicePDF(invoiceData);
+      const userId = localStorage.getItem("userId");
+
       const res = await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
         userId,
         pdfUrl: base64PDF,
       });
 
-      const invoiceId = res.data.invoice._id;
-
-      onSelectTemplate({
-        template: selectedTemplate,
-        data: invoiceData,
-        invoiceId,
-      });
+      onSelectTemplate(selectedTemplate, res.data.invoice._id);
     } catch (err) {
       console.error("Failed to save invoice:", err);
       alert("Failed to save invoice. Please try again.");
@@ -159,29 +145,31 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
                     Set as Default
                   </div>
                 </button>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/dashboard/template-editor/${template._id}`);
-                    }}
-                    className="text-gray-400 hover:text-blue-600"
-                  >
-                    <EditIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTemplate(template._id);
-                    }}
-                    className="text-gray-400 hover:text-red-600"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
+                {!invoiceData && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/dashboard/template-editor/${template._id}`);
+                      }}
+                      className="text-gray-400 hover:text-blue-600"
+                    >
+                      <EditIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTemplate(template._id);
+                      }}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-            {selectedTemplateId === template._id && (
+            {selectedTemplateId === template._id && invoiceData &&(
               <div className="absolute inset-0 bg-blue-500 bg-opacity-10 flex items-center justify-center">
                 <div className="bg-white rounded-full p-2 shadow-md">
                   <CheckIcon className="w-6 h-6 text-blue-600" />
@@ -191,18 +179,20 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           </div>
         ))}
       </div>
-      <div className="flex justify-end">
-        <button
-          onClick={handleSelectTemplate}
-          disabled={!selectedTemplateId}
-          className={`px-6 py-2 rounded-md ${selectedTemplateId
-            ? "bg-blue-600 text-white hover:bg-blue-700"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-        >
-          Use Selected Template
-        </button>
-      </div>
+      {invoiceData && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleSelectTemplate}
+            disabled={!selectedTemplateId}
+            className={`px-6 py-2 rounded-md ${selectedTemplateId
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+          >
+            Use Selected Template
+          </button>
+        </div>
+      )}
     </div>
   );
 }

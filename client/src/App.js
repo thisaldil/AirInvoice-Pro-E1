@@ -69,9 +69,9 @@ function AppWrapper() {
           element={
             <TemplateManager
               invoiceData={uploadedInvoice}
-              onSelectTemplate={({ template, data, invoiceId }) => {
+              onSelectTemplate={({ template, invoiceId }) => {
                 setSelectedTemplate(template);
-                setGeneratedInvoice({ template, data, invoiceId });
+                setGeneratedInvoice({ template, data: uploadedInvoice, invoiceId });
                 navigate("/dashboard/send");
               }}
               onCreateTemplate={() => navigate("/dashboard/template-editor")}
