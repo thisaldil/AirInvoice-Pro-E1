@@ -56,7 +56,7 @@ function SendOptions({ invoice, onBack }) {
             <h2 className="font-medium text-gray-800">Invoice Preview</h2>
             {invoiceData?.pdfUrl && (
               <a
-                href={`data:application/pdf;base64,${invoiceData.pdfUrl}`}
+                href={invoiceData.pdfUrl}
                 download="invoice.pdf"
                 className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
               >
@@ -68,7 +68,7 @@ function SendOptions({ invoice, onBack }) {
           <div className="p-4 flex justify-center">
             {invoiceData?.pdfUrl ? (
               <iframe
-                src={`data:application/pdf;base64,${invoiceData.pdfUrl}`}
+                src={invoiceData.pdfUrl}
                 title="PDF Preview"
                 width="100%"
                 height="500px"

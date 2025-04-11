@@ -5,6 +5,7 @@ const Tesseract = require("tesseract.js");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
 const Invoice = require("../models/Invoice");
+const axios = require("axios");
 
 exports.uploadInvoice = async (req, res) => {
   const filePath = req.file.path;
@@ -62,7 +63,7 @@ exports.saveInvoiceDetails = async (req, res) => {
 
     await invoice.save();
 
-    res.status(201).json({ message: "Invoice saved successfully" });
+    res.status(201).json({ message: "Invoice saved successfully", invoice });
   }
   catch (err) {
     res.status(500).json({ error: "Internal server error" });
@@ -117,17 +118,17 @@ exports.sendInvoiceEmail = async (req, res) => {
     return res.status(400).json({ error: "Valid recipient email is required" });
   }
 
-  if (!pdfUrl || typeof pdfUrl !== "string") {
-    return res.status(400).json({ error: "Valid base64 PDF is required" });
+  if (!pdfUrl || typeof pdfUrl !== "string" || !pdfUrl.startsWith("http")) {
+    return res.status(400).json({ error: "Valid PDF URL is required" });
   }
 
   const fileName = `${uuidv4()}.pdf`;
   const tempPath = path.join(__dirname, "..", "temp", fileName);
 
   try {
-    // Decode and save base64 PDF
-    const base64Data = pdfUrl.replace(/^data:application\/pdf;base64,/, "");
-    fs.writeFileSync(tempPath, Buffer.from(base64Data, "base64"));
+    // Download PDF from Cloudinary
+    const response = await axios.get(pdfUrl, { responseType: "arraybuffer" });
+    fs.writeFileSync(tempPath, Buffer.from(response.data));
 
     const transporter = nodemailer.createTransport({
       service: "gmail",

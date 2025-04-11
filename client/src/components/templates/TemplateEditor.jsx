@@ -68,31 +68,33 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     setUploading(true);
 
     try {
-      const canvas = await html2canvas(previewRef.current);
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "pt", "a4");
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      const pdfBlob = pdf.output("blob");
-      const formData = new FormData();
-      formData.append("file", pdfBlob);
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-      const cloudinaryRes = await axios.post(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
-        formData
-      );
-
-      const cloudinaryUrl = cloudinaryRes.data.secure_url;
-
       if (invoiceData) {
-        await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
+        const canvas = await html2canvas(previewRef.current);
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "pt", "a4");
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+        const pdfBlob = pdf.output("blob");
+        const formData = new FormData();
+        formData.append("file", pdfBlob);
+        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        const cloudinaryRes = await axios.post(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+          formData
+        );
+
+        const cloudinaryUrl = cloudinaryRes.data.secure_url;
+
+        const saveInvoiceRes = await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
           userId,
           pdfUrl: cloudinaryUrl,
         });
+
+        onSave?.({ template: updatedTemplate, invoiceId: saveInvoiceRes.data.invoice._id });
         navigate("/dashboard/send");
         return;
       }
