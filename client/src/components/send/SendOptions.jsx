@@ -9,6 +9,7 @@ function SendOptions({ invoice, onBack }) {
   const [phone, setPhone] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -35,7 +36,7 @@ function SendOptions({ invoice, onBack }) {
         });
       }
       if (sendMethod === "whatsapp") {
-        const message = `Hi, here's your invoice: ${invoiceData?.pdfUrl}`;
+        const message = `Dear Customer,\n\nThis is ${invoice.template.company.name}. Please find your invoice below:\n\n${invoiceData?.pdfUrl}\n\nThank you for your business.`;
         const sanitizedPhone = phone.replace(/\D/g, '');
         const whatsappLink = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappLink, "_blank");
@@ -60,12 +61,12 @@ function SendOptions({ invoice, onBack }) {
       a.download = "invoice.pdf";
       a.click();
       window.URL.revokeObjectURL(url);
-      setIsSent(true);
+      setIsDownloading(true);
     } catch (err) {
       alert("Failed to download PDF");
     }
     finally {
-      setIsSent(false);
+      setIsDownloading(false);
     }
   };
 
@@ -87,7 +88,7 @@ function SendOptions({ invoice, onBack }) {
                 className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
               >
                 <DownloadIcon className="w-4 h-4 mr-1" />
-                {isSending ? "Downloading..." : "Download Invoice"}
+                {isDownloading ? "Downloading..." : "Download Invoice"}
               </button>
             )}
           </div>
