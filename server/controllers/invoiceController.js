@@ -2,8 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const pdfPoppler = require("pdf-poppler");
 const Tesseract = require("tesseract.js");
-const User = require("../models/User");
-const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
 const Invoice = require("../models/Invoice");
@@ -51,18 +49,22 @@ exports.uploadInvoice = async (req, res) => {
 //save invoice details
 exports.saveInvoiceDetails = async (req, res) => {
   const { userId, pdfUrl } = req.body;
+
   if (!userId || !pdfUrl) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  console.log("PDF base64 size (bytes):", Buffer.byteLength(req.body.pdfUrl, 'base64'));
-
   try {
-    const invoice = new Invoice({ userId, pdfUrl });
+    const invoice = new Invoice({
+      userId,
+      pdfUrl,
+    });
+
     await invoice.save();
-    res.status(201).json({ message: "Invoice saved successfully", invoice });
-  } catch (err) {
-    console.error("Error saving invoice:", err);
+
+    res.status(201).json({ message: "Invoice saved successfully" });
+  }
+  catch (err) {
     res.status(500).json({ error: "Internal server error" });
   }
 };

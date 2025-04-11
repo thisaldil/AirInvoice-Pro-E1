@@ -9,8 +9,7 @@ const bodyParser = require("body-parser");
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+
 // Session setup
 app.use(
   session({
@@ -37,6 +36,29 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/template', templateRoutes);
 app.use("/invoice", invoiceRoutes);
+
+//signature
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
+
+app.post("/generate-signature", (req, res) => {
+  try {
+    const { timestamp } = req.body;
+
+    if (!timestamp) {
+      return res.status(400).json({ error: "Timestamp is required" });
+    }
+
+    const signature = crypto
+      .createHash("sha1")
+      .update(`timestamp=${timestamp}${CLOUDINARY_API_SECRET}`)
+      .digest("hex");
+
+    res.json({ signature });
+  } catch (error) {
+    console.error("Signature generation error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // Connect to DB
 connectDB();

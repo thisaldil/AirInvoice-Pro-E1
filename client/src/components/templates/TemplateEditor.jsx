@@ -7,12 +7,11 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
+
   const [templateName, setTemplateName] = useState("New Template");
   const [companyName, setCompanyName] = useState("Your Company Name");
   const [companyLogo, setCompanyLogo] = useState(logo);
-  const [companyAddress, setCompanyAddress] = useState(
-    "123 Business Street\nCity, State 12345\nPhone: (123) 456-7890\nEmail: info@yourcompany.com"
-  );
+  const [companyAddress, setCompanyAddress] = useState("123 Business Street\nCity, State 12345\nPhone: (123) 456-7890\nEmail: info@yourcompany.com");
   const [accentColor, setAccentColor] = useState("#3B82F6");
   const [showFooter, setShowFooter] = useState(true);
   const [footerText, setFooterText] = useState("Thank you for your business!");
@@ -22,6 +21,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const [isEditing, setIsEditing] = useState(false);
   const userId = localStorage.getItem("userId");
   const previewRef = useRef();
+  const [uploading, setUploading] = useState(false);
+  const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+  const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
 
   useEffect(() => {
     if (id) {
@@ -63,6 +65,8 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
       },
     };
 
+    setUploading(true);
+
     try {
       const canvas = await html2canvas(previewRef.current);
       const imgData = canvas.toDataURL("image/png");
@@ -72,12 +76,22 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
 
-      const pdfBase64 = pdf.output("datauristring").split(",")[1];
+      const pdfBlob = pdf.output("blob");
+      const formData = new FormData();
+      formData.append("file", pdfBlob);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      const cloudinaryRes = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+        formData
+      );
+
+      const cloudinaryUrl = cloudinaryRes.data.secure_url;
 
       if (invoiceData) {
         await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
           userId,
-          pdfUrl: pdfBase64,
+          pdfUrl: cloudinaryUrl,
         });
         navigate("/dashboard/send");
         return;
@@ -96,7 +110,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
       navigate("/dashboard/templates");
     } catch (err) {
       console.error("Failed to save template or PDF:", err);
-      alert("Error saving template or generating PDF. Please try again.");
+      alert("Error saving template or uploading PDF. Please try again.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -116,30 +132,36 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Template Editor</h1>
-        <div className="flex space-x-3">
+        <div className="flex space-x-3 items-center">
           <button
             onClick={onCancel}
             className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
+            disabled={uploading}
           >
             <XIcon className="w-4 h-4 mr-2" />
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+            disabled={uploading}
+            className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             <SaveIcon className="w-4 h-4 mr-2" />
-            {invoiceData ? "Continue" : "Save Template"}
+            {uploading
+              ? "Loading..."
+              : invoiceData
+                ? "Continue"
+                : "Save Template"}
           </button>
         </div>
       </div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Template Preview */}
-        <div ref={previewRef} className="lg:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="lg:w-2/3 bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 bg-gray-50 border-b">
             <h2 className="font-medium text-gray-800">Preview</h2>
           </div>
-          <div className="p-8">
+          <div className="p-8" ref={previewRef} >
             {/* Invoice Template Preview */}
             <div className="border rounded-md overflow-hidden">
               {/* Header */}
