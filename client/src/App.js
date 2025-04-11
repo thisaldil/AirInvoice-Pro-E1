@@ -9,7 +9,6 @@ import TemplateEditor from "./components/templates/TemplateEditor.jsx";
 import SendOptions from "./components/send/SendOptions.jsx";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register.jsx";
-import { Outlet } from "react-router-dom";
 
 function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
@@ -54,6 +53,12 @@ function AppWrapper() {
               invoice={uploadedInvoice}
               onContinue={() => navigate("/dashboard/templates")}
               onBack={() => navigate("/dashboard/upload")}
+              onEdit={(field, value) => {
+                setUploadedInvoice((prev) => ({
+                  ...prev,
+                  [field]: value,
+                }));
+              }}
             />
           }
         />
@@ -62,10 +67,10 @@ function AppWrapper() {
           path="templates"
           element={
             <TemplateManager
-              onSelectTemplate={(template) => {
+              invoiceData={uploadedInvoice}
+              onSelectTemplate={({ template }) => {
                 setSelectedTemplate(template);
-                setGeneratedInvoice({ template, data: uploadedInvoice });
-                navigate("/dashboard/send");
+                navigate(`/dashboard/template-editor/${template._id}`);
               }}
               onCreateTemplate={() => navigate("/dashboard/template-editor")}
             />
@@ -76,9 +81,11 @@ function AppWrapper() {
           path="template-editor"
           element={
             <TemplateEditor
-              onSave={(template) => {
+              invoiceData={uploadedInvoice}
+              onSave={({ template, invoiceId }) => {
                 setSelectedTemplate(template);
-                navigate("/dashboard/templates");
+                setGeneratedInvoice({ template, invoiceId });
+                navigate("/dashboard/send");
               }}
               onCancel={() => navigate("/dashboard/templates")}
             />
@@ -89,9 +96,11 @@ function AppWrapper() {
           path="template-editor/:id"
           element={
             <TemplateEditor
-              onSave={(template) => {
+              invoiceData={uploadedInvoice}
+              onSave={({ template, invoiceId }) => {
                 setSelectedTemplate(template);
-                navigate("/dashboard/templates");
+                setGeneratedInvoice({ template, invoiceId });
+                navigate("/dashboard/send");
               }}
               onCancel={() => navigate("/dashboard/templates")}
             />
@@ -109,7 +118,7 @@ function AppWrapper() {
         />
       </Route>
 
-      <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+      <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
     </Routes>
   );
 }

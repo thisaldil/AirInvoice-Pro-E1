@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { FileUpIcon, FileIcon, CheckCircleIcon, XIcon } from "lucide-react";
+import axios from "axios";
 
 function InvoiceUpload({ onUpload }) {
   const [file, setFile] = useState(null);
@@ -62,48 +63,47 @@ function InvoiceUpload({ onUpload }) {
       const formData = new FormData();
       formData.append("invoice", file);
 
-      const response = await fetch("http://localhost:5000/api/invoice/upload", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post("http://localhost:5000/invoice/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const data = await response.json();
+      const raw = response.data.text;
 
-      if (!data.success) throw new Error(data.message);
-
-      // 💡 Extract and normalize fields you want to preview
-      const prediction = data.prediction;
+      const extract = (label) => {
+        const match = raw.match(new RegExp(`${label}:\\s*(.*)`));
+        return match ? match[1].trim() : "";
+      };
 
       const formattedInvoice = {
-        bookingReference: prediction?.booking_reference?.value || "",
-        passengerName: prediction?.passenger_name?.value || "",
-        passportNumber: prediction?.passport_number?.value || "",
-        nationality: prediction?.nationality?.value || "",
-        dob: prediction?.date_of_birth?.value || "",
-        gender: prediction?.gender?.value || "",
-        totalAmount: prediction?.total_amount?.value || "",
-        paymentMethod: prediction?.payment_method?.value || "",
-        transactionId: prediction?.transaction_id?.value || "",
-        flightDetails: Array.isArray(prediction?.flight_details)
-          ? prediction.flight_details.map((flight) => ({
-              flightNumber: flight?.flight_number?.value || "",
-              from: flight?.departure_airport?.value || "",
-              to: flight?.arrival_airport?.value || "",
-              departureDate: flight?.departure_date?.value || "",
-              departureTime: flight?.departure_time?.value || "",
-              arrivalDate: flight?.arrival_date?.value || "",
-              arrivalTime: flight?.arrival_time?.value || "",
-              seatNumber: flight?.seat_number?.value || "",
-              class: flight?.class?.value || "",
-              baggageAllowance: flight?.baggage?.value || "",
-            }))
-          : [],
+        passengerName: extract("Passenger Name"),
+        bookingReference: extract("Booking Reference"),
+        passportNumber: extract("Passport Number"),
+        nationality: extract("Nationality"),
+        dob: extract("Date of Birth"),
+        gender: extract("Gender"),
+        totalAmount: extract("Total Amount"),
+        paymentMethod: extract("Payment Method"),
+        transactionId: extract("Transaction ID"),
+        flightDetails: [
+          {
+            flightNumber: extract("Flight Number"),
+            from: extract("From"),
+            to: extract("To"),
+            departureDate: extract("Departure Date"),
+            departureTime: extract("Departure Time"),
+            arrivalDate: extract("Arrival Date"),
+            arrivalTime: extract("Arrival Time"),
+            seatNumber: extract("Seat Number"),
+            class: extract("Class"),
+            baggageAllowance: extract("Baggage"),
+          },
+        ],
       };
 
       onUpload(formattedInvoice);
     } catch (err) {
-      console.error("Mindee API error:", err);
-      setError("An error occurred while extracting text. Please try again.");
+      console.error("OCR error:", err);
+      setError("An error occurred while extracting text from PDF.");
     } finally {
       setIsProcessing(false);
     }
@@ -118,22 +118,15 @@ function InvoiceUpload({ onUpload }) {
     setFile(null);
     setError(null);
   };
-  console.log("Mindee API Key:", process.env.REACT_APP_MINDEE_API_KEY);
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Invoice</h1>
-      <p className="text-gray-600 mb-8">
-        Upload an invoice to extract its text.
-      </p>
+      <p className="text-gray-600 mb-8">Upload an invoice to extract its text.</p>
 
       {!file ? (
         <div
-          className={`border-2 border-dashed rounded-lg p-12 text-center ${
-            isDragging
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 hover:border-blue-400"
-          }`}
+          className={`border-2 border-dashed rounded-lg p-12 text-center ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400"}`}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -164,10 +157,7 @@ function InvoiceUpload({ onUpload }) {
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-medium text-gray-800">Selected File</h3>
-            <button
-              onClick={handleRemoveFile}
-              className="text-gray-400 hover:text-red-500"
-            >
+            <button onClick={handleRemoveFile} className="text-gray-400 hover:text-red-500">
               <XIcon className="w-5 h-5" />
             </button>
           </div>
@@ -183,17 +173,15 @@ function InvoiceUpload({ onUpload }) {
             </div>
             <CheckCircleIcon className="w-6 h-6 text-green-500" />
           </div>
-          <button
-            onClick={handleProcessInvoice}
-            disabled={isProcessing}
-            className={`w-full py-3 rounded-md font-medium ${
-              isProcessing
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {isProcessing ? "Processing..." : "Extract Text"}
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={handleProcessInvoice}
+              disabled={isProcessing}
+              className={`px-4 py-2 rounded-md font-medium ${isProcessing ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+            >
+              {isProcessing ? "Processing..." : "Extract Text"}
+            </button>
+          </div>
         </div>
       )}
     </div>
