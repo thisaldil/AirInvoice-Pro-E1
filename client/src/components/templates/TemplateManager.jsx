@@ -1,84 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PlusIcon, CheckIcon, EditIcon, TrashIcon } from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
-  const [templates, setTemplates] = useState([
-    {
-      id: 1,
-      name: "Standard Template",
-      description: "Default company invoice template",
-      isDefault: true,
-      preview:
-        "https://images.unsplash.com/photo-1635025728933-0f16b54f1218?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Premium Template",
-      description: "High-end design for VIP clients",
-      isDefault: false,
-      preview:
-        "https://images.unsplash.com/photo-1601581987809-a874a81309c9?q=80&w=1000&auto=format&fit=crop",
-    },
-  ]);
+function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+  const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState(
-    templates.find((t) => t.isDefault)?.id || null
-  );
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/template/getTemplates/${userId}`);
+        setTemplates(res.data);
+        const defaultTemplate = res.data.find((t) => t.isDefault);
+        if (defaultTemplate) setSelectedTemplateId(defaultTemplate._id);
+      } catch (err) {
+        console.error("Failed to load templates:", err);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
-  const handleSetDefault = (templateId) => {
-    setTemplates(
-      templates.map((template) => ({
-        ...template,
-        isDefault: template.id === templateId,
-      }))
-    );
+  const handleSetDefault = async (templateId) => {
+    try {
+      const currentDefault = templates.find((t) => t.isDefault && t._id !== templateId);
+      if (currentDefault) {
+        await axios.put(`http://localhost:5000/template/updateTemplate/${currentDefault._id}`, {
+          isDefault: false,
+        });
+      }
+      await axios.put(`http://localhost:5000/template/updateTemplate/${templateId}`, {
+        isDefault: true,
+      });
+      const res = await axios.get("http://localhost:5000/template/getTemplates");
+      setTemplates(res.data);
+      setSelectedTemplateId(templateId);
+    } catch (err) {
+      console.error("Failed to update default template:", err);
+    }
   };
 
-  const handleDeleteTemplate = (templateId) => {
+  const handleDeleteTemplate = async (templateId) => {
     if (window.confirm("Are you sure you want to delete this template?")) {
-      setTemplates(templates.filter((template) => template.id !== templateId));
-      if (selectedTemplateId === templateId) {
-        setSelectedTemplateId(null);
+      try {
+        await axios.delete(`http://localhost:5000/template/deleteTemplate/${templateId}`);
+        setTemplates((prev) => prev.filter((template) => template._id !== templateId));
+        if (selectedTemplateId === templateId) {
+          setSelectedTemplateId(null);
+        }
+      } catch (err) {
+        console.error("Failed to delete template:", err);
       }
     }
   };
 
   const handleSelectTemplate = () => {
-    const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
-    if (selectedTemplate) {
-      onSelectTemplate(selectedTemplate);
-    }
+    const selectedTemplate = templates.find((t) => t._id === selectedTemplateId);
+    if (!selectedTemplate) return;
+    navigate(`/dashboard/template-editor/${selectedTemplate._id}`);
   };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Invoice Templates
-      </h1>
-      <p className="text-gray-600 mb-8">
-        Select a template to use for your new invoice or create a new template.
-      </p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Invoice Templates</h1>
+      <p className="text-gray-600 mb-8">Select a template to use for your new invoice or create a new template.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        <div
+          onClick={onCreateTemplate}
+          className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors h-full"
+        >
+          <div className="bg-blue-100 rounded-full p-3 mb-4">
+            <PlusIcon className="w-6 h-6 text-blue-600" />
+          </div>
+          <h3 className="font-medium text-gray-800 mb-1">Create New Template</h3>
+          <p className="text-sm text-gray-500 text-center">Design a custom invoice template for your business</p>
+        </div>
         {templates.map((template) => (
           <div
-            key={template.id}
-            onClick={() => setSelectedTemplateId(template.id)}
-            className={`relative border rounded-lg overflow-hidden cursor-pointer transition-all ${
-              selectedTemplateId === template.id
-                ? "ring-2 ring-blue-500 border-transparent"
+            key={template._id}
+            onClick={() => setSelectedTemplateId(template._id)}
+            className={`relative border rounded-lg overflow-hidden transition-all ${
+              selectedTemplateId === template._id && invoiceData
+                ? "cursor-pointer ring-2 ring-blue-500 border-transparent"
                 : "border-gray-200 hover:border-blue-200"
             }`}
           >
             <div className="relative h-48 bg-gray-100">
               <img
-                src={template.preview}
+                src={template.company.logo || "https://via.placeholder.com/300x200.png?text=No+Preview"}
                 alt={template.name}
                 className="w-full h-full object-cover"
               />
               {template.isDefault && (
-                <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                  Default
-                </div>
+                <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">Default</div>
               )}
             </div>
             <div className="p-4">
@@ -88,12 +104,10 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleSetDefault(template.id);
+                    handleSetDefault(template._id);
                   }}
                   className={`text-sm ${
-                    template.isDefault
-                      ? "text-blue-600 cursor-default"
-                      : "text-gray-500 hover:text-blue-600"
+                    template.isDefault ? "text-blue-600 cursor-default" : "text-gray-500 hover:text-blue-600"
                   }`}
                 >
                   <div className="flex items-center">
@@ -101,31 +115,31 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
                     Set as Default
                   </div>
                 </button>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log("Edit template", template.id);
-                    }}
-                    className="text-gray-400 hover:text-blue-600"
-                  >
-                    <EditIcon className="w-4 h-4" />
-                  </button>
-                  {!template.isDefault && (
+                {!invoiceData && (
+                  <div className="flex space-x-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTemplate(template.id);
+                        navigate(`/dashboard/template-editor/${template._id}`);
+                      }}
+                      className="text-gray-400 hover:text-blue-600"
+                    >
+                      <EditIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTemplate(template._id);
                       }}
                       className="text-gray-400 hover:text-red-600"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
-            {selectedTemplateId === template.id && (
+            {selectedTemplateId === template._id && invoiceData && (
               <div className="absolute inset-0 bg-blue-500 bg-opacity-10 flex items-center justify-center">
                 <div className="bg-white rounded-full p-2 shadow-md">
                   <CheckIcon className="w-6 h-6 text-blue-600" />
@@ -134,34 +148,20 @@ function TemplateManager({ onSelectTemplate, onCreateTemplate }) {
             )}
           </div>
         ))}
-        <div
-          onClick={onCreateTemplate}
-          className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors h-full"
-        >
-          <div className="bg-blue-100 rounded-full p-3 mb-4">
-            <PlusIcon className="w-6 h-6 text-blue-600" />
-          </div>
-          <h3 className="font-medium text-gray-800 mb-1">
-            Create New Template
-          </h3>
-          <p className="text-sm text-gray-500 text-center">
-            Design a custom invoice template for your business
-          </p>
+      </div>
+      {invoiceData && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleSelectTemplate}
+            disabled={!selectedTemplateId}
+            className={`px-6 py-2 rounded-md ${
+              selectedTemplateId ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+          >
+            Use Selected Template
+          </button>
         </div>
-      </div>
-      <div className="flex justify-end">
-        <button
-          onClick={handleSelectTemplate}
-          disabled={!selectedTemplateId}
-          className={`px-6 py-2 rounded-md ${
-            selectedTemplateId
-              ? "bg-blue-600 text-white hover:bg-blue-700"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          Use Selected Template
-        </button>
-      </div>
+      )}
     </div>
   );
 }

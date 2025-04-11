@@ -17,7 +17,6 @@ function Dashboard({ onNavigate }) {
     setUser(storedUser);
   }, []);
 
-
   const quickActions = [
     {
       id: "upload",
@@ -65,7 +64,9 @@ function Dashboard({ onNavigate }) {
           <div className="flex items-center space-x-3">
             <span className="text-gray-700 font-medium">{user.name}</span>
             <img
-              src={user.picture.replace("=s96-c", "").replace("http://", "https://")}
+              src={user.picture
+                .replace("=s96-c", "")
+                .replace("http://", "https://")}
               alt={user.name}
               className="w-10 h-10 object-cover rounded-full border border-gray-300"
             />
@@ -140,10 +141,11 @@ function Dashboard({ onNavigate }) {
                   </td>
                   <td className="py-4 px-4">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${invoice.status === "Sent"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                        }`}
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        invoice.status === "Sent"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
                     >
                       {invoice.status}
                     </span>
@@ -185,10 +187,11 @@ function Dashboard({ onNavigate }) {
             <div className="flex justify-between items-end">
               <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
               <span
-                className={`text-sm ${stat.change.startsWith("+")
-                  ? "text-green-600"
-                  : "text-red-600"
-                  }`}
+                className={`text-sm ${
+                  stat.change.startsWith("+")
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
               >
                 {stat.change}
               </span>

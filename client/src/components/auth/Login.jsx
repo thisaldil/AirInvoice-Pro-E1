@@ -46,8 +46,9 @@ const Login = () => {
             email: data.user.email,
           })
         );
+        localStorage.setItem("userId", data.userId);
         setIsAuthenticated(true);
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       console.error("Login Error:", error);

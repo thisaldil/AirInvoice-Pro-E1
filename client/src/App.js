@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import InvoiceUpload from "./components/invoice/InvoiceUpload.jsx";
@@ -10,90 +10,123 @@ import SendOptions from "./components/send/SendOptions.jsx";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register.jsx";
 
-function App() {
-  const [currentPage, setCurrentPage] = useState("dashboard");
+function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [generatedInvoice, setGeneratedInvoice] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsAuthenticated(!!token);
   }, []);
 
-  const renderContent = () => {
-    switch (currentPage) {
-      case "dashboard":
-        return <Dashboard onNavigate={setCurrentPage} />;
-      case "upload":
-        return (
-          <InvoiceUpload
-            onUpload={(invoice) => {
-              setUploadedInvoice(invoice);
-              setCurrentPage("preview");
-            }}
-          />
-        );
-      case "preview":
-        return (
-          <InvoicePreview
-            invoice={uploadedInvoice}
-            onContinue={() => setCurrentPage("templates")}
-            onBack={() => setCurrentPage("upload")}
-          />
-        );
-      case "templates":
-        return (
-          <TemplateManager
-            onSelectTemplate={(template) => {
-              setSelectedTemplate(template);
-              setGeneratedInvoice({
-                template,
-                data: uploadedInvoice,
-              });
-              setCurrentPage("send");
-            }}
-            onCreateTemplate={() => setCurrentPage("template-editor")}
-          />
-        );
-      case "template-editor":
-        return (
-          <TemplateEditor
-            onSave={(template) => {
-              setSelectedTemplate(template);
-              setCurrentPage("templates");
-            }}
-            onCancel={() => setCurrentPage("templates")}
-          />
-        );
-      case "send":
-        return (
-          <SendOptions
-            invoice={generatedInvoice}
-            onBack={() => setCurrentPage("templates")}
-          />
-        );
-      default:
-        return <Dashboard onNavigate={setCurrentPage} />;
-    }
-  };
+  if (!isAuthenticated && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+    return <Navigate to="/login" />;
+  }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route 
-          path="/dashboard" 
-          element={isAuthenticated ? (
-            <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-              {renderContent()}
-            </Layout>
-          ) : <Navigate to="/login" />}
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      <Route path="/dashboard" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+
+        <Route
+          path="upload"
+          element={
+            <InvoiceUpload
+              onUpload={(invoice) => {
+                setUploadedInvoice(invoice);
+                navigate("/dashboard/preview");
+              }}
+            />
+          }
         />
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
-      </Routes>
+
+        <Route
+          path="preview"
+          element={
+            <InvoicePreview
+              invoice={uploadedInvoice}
+              onContinue={() => navigate("/dashboard/templates")}
+              onBack={() => navigate("/dashboard/upload")}
+              onEdit={(field, value) => {
+                setUploadedInvoice((prev) => ({
+                  ...prev,
+                  [field]: value,
+                }));
+              }}
+            />
+          }
+        />
+
+        <Route
+          path="templates"
+          element={
+            <TemplateManager
+              invoiceData={uploadedInvoice}
+              onSelectTemplate={({ template }) => {
+                setSelectedTemplate(template);
+                navigate(`/dashboard/template-editor/${template._id}`);
+              }}
+              onCreateTemplate={() => navigate("/dashboard/template-editor")}
+            />
+          }
+        />
+
+        <Route
+          path="template-editor"
+          element={
+            <TemplateEditor
+              invoiceData={uploadedInvoice}
+              onSave={({ template, invoiceId }) => {
+                setSelectedTemplate(template);
+                setGeneratedInvoice({ template, invoiceId });
+                navigate("/dashboard/send");
+              }}
+              onCancel={() => navigate("/dashboard/templates")}
+            />
+          }
+        />
+
+        <Route
+          path="template-editor/:id"
+          element={
+            <TemplateEditor
+              invoiceData={uploadedInvoice}
+              onSave={({ template, invoiceId }) => {
+                setSelectedTemplate(template);
+                setGeneratedInvoice({ template, invoiceId });
+                navigate("/dashboard/send");
+              }}
+              onCancel={() => navigate("/dashboard/templates")}
+            />
+          }
+        />
+
+        <Route
+          path="send"
+          element={
+            <SendOptions
+              invoice={generatedInvoice}
+              onBack={() => navigate("/dashboard/templates")}
+            />
+          }
+        />
+      </Route>
+
+      <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppWrapper />
     </Router>
   );
 }

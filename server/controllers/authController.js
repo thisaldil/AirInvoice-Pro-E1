@@ -64,7 +64,8 @@ const handleGoogleToken = async (req, res) => {
                 email: user.email,
                 picture: user.picture,
             },
-            token: jwtToken
+            token: jwtToken,
+            userId: user._id,
         });
     } catch (error) {
         console.error("Google Token Handling Error:", error);
@@ -108,6 +109,7 @@ const handleGoogleRegister = async (req, res) => {
                 picture: user.picture,
             },
             token: jwtToken,
+            userId: user._id,
         });
     } catch (error) {
         console.error("Google Register Error:", error);
