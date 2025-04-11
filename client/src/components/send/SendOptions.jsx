@@ -34,6 +34,12 @@ function SendOptions({ invoice, onBack }) {
           pdfUrl: invoiceData?.pdfUrl,
         });
       }
+      if (sendMethod === "whatsapp") {
+        const message = `Hi, here's your invoice: ${invoiceData?.pdfUrl}`;
+        const sanitizedPhone = phone.replace(/\D/g, '');
+        const whatsappLink = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappLink, "_blank");
+      }
       setIsSent(true);
       setTimeout(() => setIsSent(false), 3000);
     } catch (err) {
@@ -42,6 +48,27 @@ function SendOptions({ invoice, onBack }) {
       setIsSending(false);
     }
   };
+
+  const handleDownload = async () => {
+    try {
+      const res = await fetch(invoiceData.pdfUrl);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "invoice.pdf";
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setIsSent(true);
+    } catch (err) {
+      alert("Failed to download PDF");
+    }
+    finally {
+      setIsSent(false);
+    }
+  };
+
 
   return (
     <div>
@@ -55,14 +82,13 @@ function SendOptions({ invoice, onBack }) {
           <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
             <h2 className="font-medium text-gray-800">Invoice Preview</h2>
             {invoiceData?.pdfUrl && (
-              <a
-                href={invoiceData.pdfUrl}
-                download="invoice.pdf"
+              <button
+                onClick={handleDownload}
                 className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
               >
                 <DownloadIcon className="w-4 h-4 mr-1" />
-                Download PDF
-              </a>
+                {isSending ? "Downloading..." : "Download Invoice"}
+              </button>
             )}
           </div>
           <div className="p-4 flex justify-center">
@@ -129,13 +155,13 @@ function SendOptions({ invoice, onBack }) {
                   >
                     <div
                       className={`p-2 rounded-full mr-4 ${sendMethod === "whatsapp"
-                        ? "bg-blue-100"
+                        ? "bg-green-100"
                         : "bg-gray-100"
                         }`}
                     >
                       <PhoneIcon
                         className={`w-5 h-5 ${sendMethod === "whatsapp"
-                          ? "text-blue-600"
+                          ? "text-green-600"
                           : "text-gray-500"
                           }`}
                       />
@@ -178,7 +204,7 @@ function SendOptions({ invoice, onBack }) {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (123) 456-7890"
+                    placeholder="e.g., 94771234567"
                     className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
