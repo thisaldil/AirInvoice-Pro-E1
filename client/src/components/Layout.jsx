@@ -6,6 +6,7 @@ import {
   SettingsIcon,
   LogOutIcon,
   BoxIcon,
+  FilesIcon
 } from "lucide-react";
 import logo from "../images/logo.png";
 
@@ -28,6 +29,11 @@ function Layout() {
       path: "/dashboard/templates",
       label: "Templates",
       icon: BoxIcon,
+    },
+    {
+      path: "/dashboard/invoices",
+      label: "All Invoices",
+      icon: FilesIcon,
     },
     {
       path: "/dashboard/settings",
