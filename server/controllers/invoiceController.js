@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const Invoice = require("../models/Invoice");
 const axios = require("axios");
 
+//upload invoice and perform OCR
 exports.uploadInvoice = async (req, res) => {
   const filePath = req.file.path;
   const outputDir = `temp_output_${Date.now()}`;
@@ -49,9 +50,9 @@ exports.uploadInvoice = async (req, res) => {
 
 //save invoice details
 exports.saveInvoiceDetails = async (req, res) => {
-  const { userId, pdfUrl } = req.body;
+  const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
-  if (!userId || !pdfUrl) {
+  if (!userId || !pdfUrl || !template?._id || !invoiceDetails || !priceDetails) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -59,13 +60,33 @@ exports.saveInvoiceDetails = async (req, res) => {
     const invoice = new Invoice({
       userId,
       pdfUrl,
+      template: {
+        _id: template._id,
+        company: {
+          name: template.company.name,
+          logo: template.company.logo,
+          address: template.company.address,
+        }
+      },
+      invoiceDetails: {
+        passengerName: invoiceDetails.passengerName,
+        passportNumber: invoiceDetails.passportNumber,
+        nationality: invoiceDetails.nationality,
+        dob: invoiceDetails.dob,
+        gender: invoiceDetails.gender,
+      },
+      priceDetails: {
+        totalAmount: priceDetails.totalAmount,
+        paymentMethod: priceDetails.paymentMethod,
+        transactionId: priceDetails.transactionId,
+      }
     });
 
     await invoice.save();
 
     res.status(201).json({ message: "Invoice saved successfully", invoice });
-  }
-  catch (err) {
+  } catch (err) {
+    console.error("Error saving invoice:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -162,3 +183,16 @@ exports.sendInvoiceEmail = async (req, res) => {
     res.status(500).json({ error: "Failed to send invoice email" });
   }
 };
+
+//delete template by id
+exports.deleteInvoice = async (req, res) => {
+  try {
+      const invoice = await Invoice.findByIdAndDelete(req.params.invoiceId);
+      if (!invoice) {
+          return res.status(404).json({ error: "invoice not found" });
+      }
+      res.status(200).json({ message: "invoice deleted successfully" });
+  } catch (error) {
+      res.status(500).json({ error: "Failed to delete invoice" });
+  }
+}
