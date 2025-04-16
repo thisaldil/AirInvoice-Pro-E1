@@ -17,6 +17,7 @@ import Login from "./components/auth/Login";
 import Register from "./components/auth/Register.jsx";
 import AllInvoices from "./components/AllInvoices";
 import Settings from "./components/Settings";
+import Crm from "./components/Crm";
 
 function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
@@ -152,6 +153,7 @@ function AppWrapper() {
 
           <Route path="invoices" element={<AllInvoices />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="crm" element={<Crm />} />
         </Route>
 
         <Route

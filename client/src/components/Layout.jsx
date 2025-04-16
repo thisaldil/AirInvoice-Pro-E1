@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import {
+  Users,
   HomeIcon,
   FileTextIcon,
   SettingsIcon,
@@ -35,6 +36,11 @@ function Layout() {
       path: "/dashboard/invoices",
       label: "All Invoices",
       icon: FilesIcon,
+    },
+    {
+      path: "/dashboard/crm",
+      label: "CRM",
+      icon: Users,
     },
     {
       path: "/dashboard/settings",
