@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FileTextIcon, SearchIcon } from "lucide-react";
+import { SearchIcon, TrashIcon } from "lucide-react";
 
 const AllInvoices = ({ setGeneratedInvoice }) => {
   const [invoices, setInvoices] = useState([]);
@@ -14,8 +14,9 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
     const fetchInvoices = async () => {
       try {
         const res = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
-        setInvoices(res.data);
-        setFilteredInvoices(res.data);
+        const sortedInvoices = res.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setInvoices(sortedInvoices);
+        setFilteredInvoices(sortedInvoices);
       } catch (err) {
         console.error("Failed to load invoices:", err);
       }
@@ -60,6 +61,18 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
     navigate(`/dashboard/send`);
   };
 
+  const handleDeleteInvoice = async (invoiceId) => {
+    if (window.confirm("Are you sure you want to delete this invoice?")) {
+      try {
+        await axios.delete(`http://localhost:5000/invoice/deleteInvoice/${invoiceId}`);
+        setInvoices((prev) => prev.filter((invoice) => invoice._id !== invoiceId));
+      } catch (err) {
+        console.error("Failed to delete invoice:", err);
+        alert("Failed to delete invoice. Please try again.");
+      }
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">All Invoices</h1>
@@ -93,7 +106,18 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             <div className="p-4 text-sm text-gray-500 space-y-1">
               <p className="text-2xl"><strong> {invoice.invoiceDetails.passengerName}</strong></p>
               <p><strong>Passport No:</strong> {invoice.invoiceDetails.passportNumber}</p>
-              <p><strong>Invoice ID:</strong> {invoice._id}</p>
+              <div className="flex flex-row justify-between items-center w-full">
+                <p><strong>Invoice ID:</strong> {invoice._id}</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteInvoice(invoice._id);
+                  }}
+                  className="text-gray-400 hover:text-red-600"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
