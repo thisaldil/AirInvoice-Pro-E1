@@ -39,8 +39,17 @@ const AllInvoices = ({ setUploadedInvoice }) => {
 
   const handleClick = (invoice) => {
     if (!invoice) return;
-    setUploadedInvoice(invoice);
-    navigate(`/dashboard/template-editor/${invoice._id}`);
+
+    const extractedData = {
+      ...invoice.data,
+      pdfUrl: invoice.pdfUrl,
+      templateId: invoice.template?._id || null,
+      companyName: invoice.template?.company?.name || "",
+      companyLogo: invoice.template?.company?.logo || ""
+    };
+
+    setUploadedInvoice(extractedData);
+    navigate(`/dashboard/template-editor/${invoice.template?._id}`);
   };
 
   return (

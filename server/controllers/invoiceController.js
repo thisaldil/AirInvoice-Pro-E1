@@ -49,9 +49,9 @@ exports.uploadInvoice = async (req, res) => {
 
 //save invoice details
 exports.saveInvoiceDetails = async (req, res) => {
-  const { userId, pdfUrl } = req.body;
+  const { userId, pdfUrl, template } = req.body;
 
-  if (!userId || !pdfUrl) {
+  if (!userId || !pdfUrl || !template?._id) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -59,13 +59,21 @@ exports.saveInvoiceDetails = async (req, res) => {
     const invoice = new Invoice({
       userId,
       pdfUrl,
+      template: {
+        _id: template._id,
+        company: {
+          name: template.company.name,
+          logo: template.company.logo,
+          address: template.company.address,
+        }
+      }
     });
 
     await invoice.save();
 
     res.status(201).json({ message: "Invoice saved successfully", invoice });
-  }
-  catch (err) {
+  } catch (err) {
+    console.error("Error saving invoice:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 };

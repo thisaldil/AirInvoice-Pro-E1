@@ -92,6 +92,14 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         const saveInvoiceRes = await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
           userId,
           pdfUrl: cloudinaryUrl,
+          template: {
+            _id: id,
+            company: {
+              name: companyName,
+              logo: companyLogo,
+              address: companyAddress,
+            }
+          }
         });
 
         onSave?.({ template: updatedTemplate, invoiceId: saveInvoiceRes.data.invoice._id });
