@@ -12,14 +12,19 @@ const invoiceSchema = new Schema({
             logo: String,
             address: String,
         },
-        invoiceDetails: {
-            passengerName: String,
-            passportNumber: String,
-            nationality: String,
-            dob: String,
-            gender: String,
-        }
-    }
+    },
+    invoiceDetails: {
+        passengerName: String,
+        passportNumber: String,
+        nationality: String,
+        dob: String,
+        gender: String,
+    },
+    priceDetails: {
+        totalAmount: String,
+        paymentMethod: String,
+        transactionId: String,
+    },
 });
 
 module.exports = mongoose.model('Invoice', invoiceSchema);

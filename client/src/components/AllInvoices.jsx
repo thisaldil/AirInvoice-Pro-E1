@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FileTextIcon, SearchIcon } from "lucide-react";
 
-const AllInvoices = ({ setUploadedInvoice }) => {
+const AllInvoices = ({ setGeneratedInvoice }) => {
   const [invoices, setInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [search, setSearch] = useState("");
@@ -30,8 +30,8 @@ const AllInvoices = ({ setUploadedInvoice }) => {
     } else {
       const term = search.toLowerCase();
       const filtered = invoices.filter((inv) =>
-        inv?.template?.company?.name?.toLowerCase().includes(term) ||
-        inv?.date?.toLowerCase().includes(term)
+        inv?.invoiceDetails?.passengerName?.toLowerCase().includes(term) ||
+        inv?.invoiceDetails?.passportNumber?.toLowerCase().includes(term)
       );
       setFilteredInvoices(filtered);
     }
@@ -40,16 +40,24 @@ const AllInvoices = ({ setUploadedInvoice }) => {
   const handleClick = (invoice) => {
     if (!invoice) return;
 
-    const extractedData = {
-      ...invoice.data,
-      pdfUrl: invoice.pdfUrl,
-      templateId: invoice.template?._id || null,
-      companyName: invoice.template?.company?.name || "",
-      companyLogo: invoice.template?.company?.logo || ""
-    };
+    setGeneratedInvoice({
+      template: {
+        _id: invoice.template?._id,
+        company: {
+          name: invoice.template?.company?.name,
+          logo: invoice.template?.company?.logo,
+          address: invoice.template?.company?.address,
+        },
+      },
+      invoiceId: invoice._id,
+      invoiceDetails: {
+        ...invoice.invoiceDetails,
+        ...invoice.priceDetails,
+        pdfUrl: invoice.pdfUrl,
+      },
+    });
 
-    setUploadedInvoice(extractedData);
-    navigate(`/dashboard/template-editor/${invoice.template?._id}`);
+    navigate(`/dashboard/send`);
   };
 
   return (
@@ -59,7 +67,7 @@ const AllInvoices = ({ setUploadedInvoice }) => {
         <div className="relative w-full max-w-md">
           <input
             type="text"
-            placeholder="Search by company or date..."
+            placeholder="Search by name or passport no..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-md pl-10"
@@ -76,13 +84,15 @@ const AllInvoices = ({ setUploadedInvoice }) => {
             className="cursor-pointer border rounded-lg bg-white shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
             <div className="p-4 flex items-center border-b">
-              <FileTextIcon className="w-5 h-5 text-blue-500 mr-2" />
-              <div className="font-medium text-gray-800 truncate">
-                {invoice.template?.company?.name || "Untitled Company"}
+              <img src={invoice.template.company?.logo} alt="logo" className="w-10 h-10 mr-3 object-contain" />
+              <div className="flex flex-row justify-between items-center w-full">
+                <span className="font-medium text-gray-800">{invoice.template?.company?.name || "Untitled Company"}</span>
+                <span className="text-sm text-gray-500">{new Date(invoice.date).toLocaleDateString("en-GB")}</span>
               </div>
             </div>
             <div className="p-4 text-sm text-gray-500 space-y-1">
-              <p><strong>Date:</strong> {new Date(invoice.date).toLocaleDateString()}</p>
+              <p className="text-2xl"><strong> {invoice.invoiceDetails.passengerName}</strong></p>
+              <p><strong>Passport No:</strong> {invoice.invoiceDetails.passportNumber}</p>
               <p><strong>Invoice ID:</strong> {invoice._id}</p>
             </div>
           </div>

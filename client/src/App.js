@@ -121,8 +121,8 @@ function AppWrapper() {
         <Route
           path="invoices"
           element={
-            <AllInvoices setUploadedInvoice={(invoice) => {
-              setUploadedInvoice(invoice);
+            <AllInvoices setGeneratedInvoice={(invoice) => {
+              setGeneratedInvoice(invoice);
             }} />
           }
         />

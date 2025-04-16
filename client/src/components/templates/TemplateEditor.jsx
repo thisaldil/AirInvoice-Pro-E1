@@ -99,7 +99,19 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               logo: companyLogo,
               address: companyAddress,
             }
-          }
+          },
+          invoiceDetails: {
+            passengerName: invoiceData.passengerName,
+            passportNumber: invoiceData.passportNumber,
+            nationality: invoiceData.nationality,
+            dob: invoiceData.dob,
+            gender: invoiceData.gender,
+          },
+          priceDetails: {
+            totalAmount: invoiceData.totalAmount,
+            paymentMethod: invoiceData.paymentMethod,
+            transactionId: invoiceData.transactionId,
+          },
         });
 
         onSave?.({ template: updatedTemplate, invoiceId: saveInvoiceRes.data.invoice._id });
@@ -160,7 +172,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             {uploading
               ? "Loading..."
               : invoiceData
-                ? "Continue"
+                ? "Save & Continue"
                 : "Save Template"}
           </button>
         </div>
@@ -176,8 +188,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             <div className="border rounded-md overflow-hidden">
               {/* Header */}
               <div
-                className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""
-                  }`}
+                className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("header")}
               >
                 <div>
@@ -188,9 +199,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   />
                   <h2
                     className="text-xl font-bold"
-                    style={{
-                      color: accentColor,
-                    }}
+                    style={{ color: accentColor, }}
                   >
                     {companyName}
                   </h2>
@@ -198,9 +207,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                 <div className="text-right">
                   <h1
                     className="text-2xl font-bold mb-1"
-                    style={{
-                      color: accentColor,
-                    }}
+                    style={{ color: accentColor, }}
                   >
                     INVOICE
                   </h1>
@@ -216,8 +223,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Company & Client Info */}
               <div
-                className={`p-6 grid grid-cols-2 gap-6 border-b ${selectedSection === "info" ? "ring-2 ring-blue-500" : ""
-                  }`}
+                className={`p-6 grid grid-cols-2 gap-6 border-b ${selectedSection === "info" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("info")}
               >
                 <div>
@@ -237,15 +243,12 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Flight Details */}
               <div
-                className={`p-6 border-b ${selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
-                  }`}
+                className={`p-6 border-b ${selectedSection === "flights" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("flights")}
               >
                 <h3
                   className="font-medium mb-4"
-                  style={{
-                    color: accentColor,
-                  }}
+                  style={{ color: accentColor, }}
                 >
                   Flight Details
                 </h3>
@@ -277,15 +280,12 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Pricing */}
               <div
-                className={`p-6 border-b ${selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
-                  }`}
+                className={`p-6 border-b ${selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("pricing")}
               >
                 <h3
                   className="font-medium mb-4"
-                  style={{
-                    color: accentColor,
-                  }}
+                  style={{ color: accentColor, }}
                 >
                   Pricing Details
                 </h3>
@@ -307,12 +307,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               {/* Footer */}
               {showFooter && (
                 <div
-                  className={`p-6 text-center ${selectedSection === "footer" ? "ring-2 ring-blue-500" : ""
-                    }`}
+                  className={`p-6 text-center ${selectedSection === "footer" ? "ring-2 ring-blue-500" : ""}`}
                   onClick={() => setSelectedSection("footer")}
-                  style={{
-                    backgroundColor: accentColor + "10",
-                  }}
+                  style={{ backgroundColor: accentColor + "10", }}
                 >
                   <p className="text-gray-700">{footerText}</p>
                 </div>
