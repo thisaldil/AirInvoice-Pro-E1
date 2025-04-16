@@ -113,7 +113,7 @@ function AppWrapper() {
           element={
             <SendOptions
               invoice={generatedInvoice}
-              onBack={() => navigate("/dashboard/templates")}
+              onBack={() => navigate("/dashboard/invoices")}
             />
           }
         />
