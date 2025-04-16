@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FileTextIcon, SearchIcon } from "lucide-react";
 
-const AllInvoices = () => {
+const AllInvoices = ({ setUploadedInvoice }) => {
   const [invoices, setInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [search, setSearch] = useState("");
@@ -37,6 +37,12 @@ const AllInvoices = () => {
     }
   }, [search, invoices]);
 
+  const handleClick = (invoice) => {
+    if (!invoice) return;
+    setUploadedInvoice(invoice);
+    navigate(`/dashboard/template-editor/${invoice._id}`);
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-800 mb-6">All Invoices</h1>
@@ -57,7 +63,7 @@ const AllInvoices = () => {
         {filteredInvoices.map((invoice) => (
           <div
             key={invoice._id}
-            onClick={() => navigate(`/dashboard/template-editor/${invoice.template._id}`)}
+            onClick={() => handleClick(invoice)}
             className="cursor-pointer border rounded-lg bg-white shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
             <div className="p-4 flex items-center border-b">

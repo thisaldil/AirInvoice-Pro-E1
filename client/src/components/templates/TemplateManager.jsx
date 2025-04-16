@@ -81,11 +81,10 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           <div
             key={template._id}
             onClick={() => setSelectedTemplateId(template._id)}
-            className={`relative border rounded-lg overflow-hidden transition-all ${
-              selectedTemplateId === template._id && invoiceData
+            className={`relative border rounded-lg overflow-hidden transition-all ${selectedTemplateId === template._id && invoiceData
                 ? "cursor-pointer ring-2 ring-blue-500 border-transparent"
                 : "border-gray-200 hover:border-blue-200"
-            }`}
+              }`}
           >
             <div className="relative h-48 bg-gray-100">
               <img
@@ -106,9 +105,8 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
                     e.stopPropagation();
                     handleSetDefault(template._id);
                   }}
-                  className={`text-sm ${
-                    template.isDefault ? "text-blue-600 cursor-default" : "text-gray-500 hover:text-blue-600"
-                  }`}
+                  className={`text-sm ${template.isDefault ? "text-blue-600 cursor-default" : "text-gray-500 hover:text-blue-600"
+                    }`}
                 >
                   <div className="flex items-center">
                     <CheckIcon className="w-4 h-4 mr-1" />
@@ -154,9 +152,8 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           <button
             onClick={handleSelectTemplate}
             disabled={!selectedTemplateId}
-            className={`px-6 py-2 rounded-md ${
-              selectedTemplateId ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+            className={`px-6 py-2 rounded-md ${selectedTemplateId ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
           >
             Use Selected Template
           </button>
