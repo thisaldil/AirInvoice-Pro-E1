@@ -4,7 +4,6 @@ const cors = require("cors");
 const session = require("express-session");
 const passport = require("passport");
 const connectDB = require("./database");
-const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
