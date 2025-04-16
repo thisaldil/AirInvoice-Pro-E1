@@ -13,7 +13,9 @@ const AllInvoices = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
+        const res = await axios.get(
+          `http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`
+        );
         setInvoices(res.data);
         setFilteredInvoices(res.data);
       } catch (err) {
@@ -29,9 +31,10 @@ const AllInvoices = () => {
       setFilteredInvoices(invoices);
     } else {
       const term = search.toLowerCase();
-      const filtered = invoices.filter((inv) =>
-        inv?.template?.company?.name?.toLowerCase().includes(term) ||
-        inv?.date?.toLowerCase().includes(term)
+      const filtered = invoices.filter(
+        (inv) =>
+          inv?.template?.company?.name?.toLowerCase().includes(term) ||
+          inv?.date?.toLowerCase().includes(term)
       );
       setFilteredInvoices(filtered);
     }
@@ -39,7 +42,9 @@ const AllInvoices = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">All Invoices</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6 dark:text-white">
+        All Invoices
+      </h1>
       <div className="mb-6 flex items-center">
         <div className="relative w-full max-w-md">
           <input
@@ -57,7 +62,9 @@ const AllInvoices = () => {
         {filteredInvoices.map((invoice) => (
           <div
             key={invoice._id}
-            onClick={() => navigate(`/dashboard/template-editor/${invoice.template._id}`)}
+            onClick={() =>
+              navigate(`/dashboard/template-editor/${invoice.template._id}`)
+            }
             className="cursor-pointer border rounded-lg bg-white shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
             <div className="p-4 flex items-center border-b">
@@ -67,13 +74,20 @@ const AllInvoices = () => {
               </div>
             </div>
             <div className="p-4 text-sm text-gray-500 space-y-1">
-              <p><strong>Date:</strong> {new Date(invoice.date).toLocaleDateString()}</p>
-              <p><strong>Invoice ID:</strong> {invoice._id}</p>
+              <p>
+                <strong>Date:</strong>{" "}
+                {new Date(invoice.date).toLocaleDateString()}
+              </p>
+              <p>
+                <strong>Invoice ID:</strong> {invoice._id}
+              </p>
             </div>
           </div>
         ))}
         {filteredInvoices.length === 0 && (
-          <p className="text-gray-500 text-center col-span-full">No invoices found.</p>
+          <p className="text-gray-500 text-center col-span-full">
+            No invoices found.
+          </p>
         )}
       </div>
     </div>

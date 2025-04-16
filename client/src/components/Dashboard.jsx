@@ -59,16 +59,20 @@ function Dashboard({ onNavigate }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          Dashboard
+        </h1>
         {user && (
-          <div className="flex items-center space-x-3">
-            <span className="text-gray-700 font-medium">{user.name}</span>
+          <div className="flex items-center space-x-3 ">
+            <span className="text-gray-700 font-medium dark:text-white">
+              {user.name}
+            </span>
             <img
               src={user.picture
                 .replace("=s96-c", "")
                 .replace("http://", "https://")}
               alt={user.name}
-              className="w-10 h-10 object-cover rounded-full border border-gray-300"
+              className="w-10 h-10 object-cover rounded-full border border-gray-300 "
             />
           </div>
         )}

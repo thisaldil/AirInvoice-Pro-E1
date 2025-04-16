@@ -121,14 +121,14 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
       <div className="flex justify-between">
         <button
           onClick={onBack}
-          className="flex items-center px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          className="flex items-center px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50 dark:text-white"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-2" />
           Back
         </button>
         <button
           onClick={onContinue}
-          className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:text-white"
         >
           Continue
           <ArrowRightIcon className="w-4 h-4 ml-2" />
