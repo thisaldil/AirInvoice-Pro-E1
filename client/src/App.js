@@ -9,6 +9,7 @@ import TemplateEditor from "./components/templates/TemplateEditor.jsx";
 import SendOptions from "./components/send/SendOptions.jsx";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register.jsx";
+import AllInvoices from "./components/AllInvoices";
 
 function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
@@ -112,13 +113,23 @@ function AppWrapper() {
           element={
             <SendOptions
               invoice={generatedInvoice}
-              onBack={() => navigate("/dashboard/templates")}
+              onBack={() => navigate("/dashboard/invoices")}
             />
           }
         />
+
+        <Route
+          path="invoices"
+          element={
+            <AllInvoices setGeneratedInvoice={(invoice) => {
+              setGeneratedInvoice(invoice);
+            }} />
+          }
+        />
+
       </Route>
 
-      <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
+      <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
     </Routes>
   );
 }

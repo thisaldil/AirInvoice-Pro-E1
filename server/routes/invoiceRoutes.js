@@ -10,5 +10,6 @@ router.post('/sendInvoiceEmail', invoiceController.sendInvoiceEmail);
 router.post('/saveInvoiceDetails', invoiceController.saveInvoiceDetails);
 router.get('/getInvoiceDetailsByUserId/:userId', invoiceController.getInvoiceDetailsByUserId);
 router.get('/getInvoiceDetailsByInvoiceId/:invoiceId', invoiceController.getInvoiceDetailsByInvoiceId);
+router.delete('/deleteInvoice/:invoiceId', invoiceController.deleteInvoice);
 
 module.exports = router;

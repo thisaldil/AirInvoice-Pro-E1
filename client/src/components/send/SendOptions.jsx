@@ -9,6 +9,9 @@ function SendOptions({ invoice, onBack }) {
   const [phone, setPhone] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [countryCodes, setCountryCodes] = useState([]);
+  const [selectedCode, setSelectedCode] = useState("");
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -34,6 +37,12 @@ function SendOptions({ invoice, onBack }) {
           pdfUrl: invoiceData?.pdfUrl,
         });
       }
+      if (sendMethod === "whatsapp") {
+        const message = `Dear Customer,\n\nThis is ${invoice.template.company.name}. Please find your invoice below:\n\n${invoiceData?.pdfUrl}\n\nThank you for your business.`;
+        const sanitizedPhone = `${selectedCode}${phone.replace(/\D/g, "")}`;
+        const whatsappLink = `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappLink, "_blank");
+      }
       setIsSent(true);
       setTimeout(() => setIsSent(false), 3000);
     } catch (err) {
@@ -42,6 +51,56 @@ function SendOptions({ invoice, onBack }) {
       setIsSending(false);
     }
   };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const res = await fetch(invoiceData.pdfUrl);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "invoice.pdf";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to download PDF");
+    }
+    finally {
+      setIsDownloading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCountryCodes = async () => {
+      try {
+        const res = await axios.get("https://restcountries.com/v3.1/all");
+        const data = res.data;
+
+        const codes = data
+          .map((country) => ({
+            name: country.name.common,
+            code: country.idd?.root && country.idd?.suffixes
+              ? `${country.idd.root}${country.idd.suffixes[0]}`
+              : null,
+          }))
+          .filter((c) => c.code);
+
+        const sortedCodes = codes.sort((a, b) => a.name.localeCompare(b.name));
+        setCountryCodes(sortedCodes);
+
+        const sriLanka = sortedCodes.find((c) => c.code === "+94");
+        if (sriLanka) {
+          setSelectedCode(sriLanka.code);
+        }
+      } catch (error) {
+        console.error("Error fetching country codes:", error);
+      }
+    };
+
+    fetchCountryCodes();
+  }, []);
 
   return (
     <div>
@@ -55,14 +114,13 @@ function SendOptions({ invoice, onBack }) {
           <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
             <h2 className="font-medium text-gray-800">Invoice Preview</h2>
             {invoiceData?.pdfUrl && (
-              <a
-                href={invoiceData.pdfUrl}
-                download="invoice.pdf"
+              <button
+                onClick={handleDownload}
                 className="text-blue-600 hover:text-blue-800 flex items-center text-sm"
               >
                 <DownloadIcon className="w-4 h-4 mr-1" />
-                Download PDF
-              </a>
+                {isDownloading ? "Downloading..." : "Download Invoice"}
+              </button>
             )}
           </div>
           <div className="p-4 flex justify-center">
@@ -129,13 +187,13 @@ function SendOptions({ invoice, onBack }) {
                   >
                     <div
                       className={`p-2 rounded-full mr-4 ${sendMethod === "whatsapp"
-                        ? "bg-blue-100"
+                        ? "bg-green-100"
                         : "bg-gray-100"
                         }`}
                     >
                       <PhoneIcon
                         className={`w-5 h-5 ${sendMethod === "whatsapp"
-                          ? "text-blue-600"
+                          ? "text-green-600"
                           : "text-gray-500"
                           }`}
                       />
@@ -174,13 +232,26 @@ function SendOptions({ invoice, onBack }) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Recipient Phone Number
                   </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (123) 456-7890"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedCode}
+                      onChange={(e) => setSelectedCode(e.target.value)}
+                      className="w-1/3 p-2 border border-gray-300 rounded-md"
+                    >
+                      {countryCodes.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} ({c.name})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="712345678"
+                      className="w-2/3 p-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
                 </div>
               )}
               {isSent && (
