@@ -169,6 +169,9 @@ function AppWrapper() {
             <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
           }
         />
+
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/crm" element={<Crm />} />
       </Routes>
     </div>
   );
