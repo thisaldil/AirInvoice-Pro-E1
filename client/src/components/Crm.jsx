@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Pencil, PlusCircle, X } from "lucide-react";
-import ReactQuill from "react-quill";
-
+import RichTextEditor from "./templates/RichTextEditor";
 const defaultTemplates = [
   {
     id: 1,
@@ -157,12 +156,7 @@ const Crm = () => {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
-            <ReactQuill
-              value={content}
-              onChange={setContent}
-              className="mb-4 bg-white dark:bg-gray-900"
-              theme="snow"
-            />
+            <RichTextEditor value={content} onChange={setContent} />
             <button
               onClick={handleSave}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
