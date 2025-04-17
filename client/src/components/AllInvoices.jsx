@@ -108,15 +108,27 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             className="cursor-pointer border rounded-lg bg-white shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
             <div className="p-4 flex items-center border-b">
-              <img
-                src={invoice.template.company?.logo}
-                alt="logo"
-                className="w-10 h-10 mr-3 object-contain"
-              />
+              {invoice.template?.company?.logo ? (
+                <img
+                  src={invoice.template.company.logo}
+                  alt="logo"
+                  className="w-10 h-10 mr-3 object-contain"
+                />
+              ) : (
+                <div className="w-10 h-10 mr-3 bg-gray-200 rounded" />
+              )}
+
               <div className="flex flex-row justify-between items-center w-full">
-                <span className="font-medium text-gray-800">
-                  {invoice.template?.company?.name || "Untitled Company"}
-                </span>
+                {invoice.template?.company?.logo ? (
+                  <img
+                    src={invoice.template.company.logo}
+                    alt="logo"
+                    className="w-10 h-10 mr-3 object-contain"
+                  />
+                ) : (
+                  <div className="w-10 h-10 mr-3 bg-gray-200 rounded" />
+                )}
+
                 <span className="text-sm text-gray-500">
                   {new Date(invoice.date).toLocaleDateString("en-GB")}
                 </span>
@@ -124,12 +136,15 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             </div>
             <div className="p-4 text-sm text-gray-500 space-y-1">
               <p className="text-2xl">
-                <strong> {invoice.invoiceDetails.passengerName}</strong>
+                <strong>
+                  {invoice.invoiceDetails?.passengerName || "No Name"}
+                </strong>
               </p>
               <p>
                 <strong>Passport No:</strong>{" "}
-                {invoice.invoiceDetails.passportNumber}
+                {invoice.invoiceDetails?.passportNumber || "N/A"}
               </p>
+
               <div className="flex flex-row justify-between items-center w-full">
                 <p>
                   <strong>Invoice ID:</strong> {invoice._id}

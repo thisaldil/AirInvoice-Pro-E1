@@ -10,16 +10,16 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
         Review Extracted Data
       </h1>
-      <p className="text-gray-600 mb-8">
+      <p className="text-gray-600 dark:text-gray-300 mb-8">
         We've extracted the following information from the air ticket invoice.
         Please review and make any necessary corrections.
       </p>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 text-gray-900 dark:text-white">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">
           Ticket Information
         </h2>
         <div className="space-y-6">
@@ -57,44 +57,57 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-500 mb-2">
+            <label className="block text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">
               Flight Details
             </label>
             {invoice?.flightDetails?.length > 0 ? (
               invoice.flightDetails.map((flight, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-md mb-4">
+                <div
+                  key={index}
+                  className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md mb-4"
+                >
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium text-gray-800">
+                    <h4 className="font-medium text-gray-800 dark:text-white">
                       {flight.flightNumber || `Flight #${index + 1}`}
                     </h4>
-                    <span className="text-sm font-medium text-blue-600">
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                       {flight.class}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">From</p>
-                      <p className="font-medium">{flight.from}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-500 dark:text-gray-300">
+                        From
+                      </p>
+                      <p className="font-medium text-gray-800 dark:text-white">
+                        {flight.from}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {flight.departureDate} at {flight.departureTime}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">To</p>
-                      <p className="font-medium">{flight.to}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-500 dark:text-gray-300">
+                        To
+                      </p>
+                      <p className="font-medium text-gray-800 dark:text-white">
+                        {flight.to}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {flight.arrivalDate} at {flight.arrivalTime}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-500">
+                  <div className="mt-2 text-sm text-gray-500 dark:text-gray-300">
                     Seat: {flight.seatNumber} | Baggage:{" "}
                     {flight.baggageAllowance}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">No flight details available.</p>
+              <p className="text-gray-500 dark:text-gray-300">
+                No flight details available.
+              </p>
             )}
           </div>
 
@@ -121,7 +134,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
       <div className="flex justify-between">
         <button
           onClick={onBack}
-          className="flex items-center px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50 dark:text-white"
+          className="flex items-center px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-2" />
           Back
@@ -138,10 +151,10 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
   );
 }
 
-// Reusable input field
+// Reusable input field with full dark mode support
 const Field = ({ label, value, onEdit }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-500 mb-1">
+    <label className="block text-sm font-medium text-gray-500 dark:text-gray-300 mb-1">
       {label}
     </label>
     <div className="flex">
@@ -149,7 +162,7 @@ const Field = ({ label, value, onEdit }) => (
         type="text"
         value={value || ""}
         onChange={(e) => onEdit(e.target.value)}
-        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-blue-500 focus:border-blue-500"
       />
       <button className="ml-2 text-gray-400 hover:text-blue-500">
         <EditIcon className="w-5 h-5" />

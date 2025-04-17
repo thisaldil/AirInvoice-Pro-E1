@@ -100,30 +100,32 @@ function Dashboard({ onNavigate }) {
           </button>
         ))}
       </div>
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8 dark:bg-gray-700 dark:text-white">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Recent Invoices</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:bg-gray-700 dark:text-white">
+            Recent Invoices
+          </h2>
           <button className="text-blue-500 hover:text-blue-700 text-sm font-medium">
             View All
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
+        <div className="overflow-x-auto ">
+          <table className="min-w-full ">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+              <tr className="border-b border-gray-200 ">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
                   Customer
                 </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
                   Date
                 </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
                   Amount
                 </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-white">
                   Status
                 </th>
-                <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-right text-sm font-medium text-gray-500 dark:text-white">
                   Actions
                 </th>
               </tr>
