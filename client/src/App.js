@@ -146,14 +146,21 @@ function AppWrapper() {
             element={
               <SendOptions
                 invoice={generatedInvoice}
-                onBack={() => navigate("/dashboard/templates")}
+                onBack={() => navigate("/dashboard/invoices")}
               />
             }
           />
 
-          <Route path="invoices" element={<AllInvoices />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="crm" element={<Crm />} />
+          <Route
+            path="invoices"
+            element={
+              <AllInvoices
+                setGeneratedInvoice={(invoice) => {
+                  setGeneratedInvoice(invoice);
+                }}
+              />
+            }
+          />
         </Route>
 
         <Route

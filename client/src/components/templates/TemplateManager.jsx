@@ -189,7 +189,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           <button
             onClick={handleSelectTemplate}
             disabled={!selectedTemplateId}
-            className={`px-6 py-2 rounded-md dark:text-white ${
+            className={`px-6 py-2 rounded-md ${
               selectedTemplateId
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
