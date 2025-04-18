@@ -1,7 +1,31 @@
-import React from "react";
-import { ArrowLeftIcon, ArrowRightIcon, EditIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
+  const [countries, setCountries] = useState([]);
+  const [isValid, setIsValid] = useState(false);
+
+  useEffect(() => {
+    fetch("https://restcountries.com/v3.1/all")
+      .then((res) => res.json())
+      .then((data) => {
+        const countryList = data.map((c) => c.name.common).sort();
+        setCountries(countryList);
+      });
+  }, []);
+
+  useEffect(() => {
+    const requiredFields = [
+      invoice.passportNumber,
+      invoice.nationality,
+      invoice.dob,
+      invoice.gender,
+      invoice.totalAmount,
+    ];
+    const allFlightsValid = invoice.flightDetails?.length > 0;
+    setIsValid(requiredFields.every(Boolean) && allFlightsValid);
+  }, [invoice]);
+
   const handleFieldEdit = (field, value) => {
     if (onEdit) {
       onEdit(field, value);
@@ -27,33 +51,75 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
             <Field
               label="Booking Reference"
               value={invoice.bookingReference}
-              onEdit={(val) => handleFieldEdit("bookingReference", val)}
+              readOnly
+              placeholder="e.g., 621368349"
             />
             <Field
               label="Passenger Name"
               value={invoice.passengerName}
-              onEdit={(val) => handleFieldEdit("passengerName", val)}
+              readOnly
+              placeholder="e.g., P KOCHCHIKKAN/A JAYANATH MR"
+            />
+            <Field
+              label="Ticket Number"
+              value={invoice.transactionId}
+              readOnly
+              placeholder="e.g., 5142372016237"
             />
             <Field
               label="Passport Number"
               value={invoice.passportNumber}
+              placeholder="e.g., N1234567"
+              required
               onEdit={(val) => handleFieldEdit("passportNumber", val)}
             />
-            <Field
-              label="Nationality"
-              value={invoice.nationality}
-              onEdit={(val) => handleFieldEdit("nationality", val)}
-            />
-            <Field
-              label="Date of Birth"
-              value={invoice.dob}
-              onEdit={(val) => handleFieldEdit("dob", val)}
-            />
-            <Field
-              label="Gender"
-              value={invoice.gender}
-              onEdit={(val) => handleFieldEdit("gender", val)}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                Nationality
+              </label>
+              <select
+                value={invoice.nationality || "Sri Lanka"}
+                onChange={(e) => handleFieldEdit("nationality", e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select Country</option>
+                {countries.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                max={new Date().toISOString().split("T")[0]}
+                value={invoice.dob || ""}
+                onChange={(e) => handleFieldEdit("dob", e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                Gender
+              </label>
+              <select
+                value={invoice.gender || ""}
+                onChange={(e) => handleFieldEdit("gender", e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -88,8 +154,12 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-gray-500">
-                    Seat: {flight.seatNumber} | Baggage:{" "}
-                    {flight.baggageAllowance}
+                    Airline: {flight.airline || "-"} | Ticket No:{" "}
+                    {flight.ticketNumber || "-"}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Seat: {flight.seatNumber || "-"} | Baggage:{" "}
+                    {flight.baggageAllowance || "-"}
                   </div>
                 </div>
               ))
@@ -102,17 +172,9 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
             <Field
               label="Total Amount"
               value={invoice.totalAmount}
+              required
+              placeholder="e.g., 45000.00"
               onEdit={(val) => handleFieldEdit("totalAmount", val)}
-            />
-            <Field
-              label="Payment Method"
-              value={invoice.paymentMethod}
-              onEdit={(val) => handleFieldEdit("paymentMethod", val)}
-            />
-            <Field
-              label="Transaction ID"
-              value={invoice.transactionId}
-              onEdit={(val) => handleFieldEdit("transactionId", val)}
             />
           </div>
         </div>
@@ -128,7 +190,12 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
         </button>
         <button
           onClick={onContinue}
-          className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          disabled={!isValid}
+          className={`flex items-center px-6 py-2 rounded-md ${
+            isValid
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
           Continue
           <ArrowRightIcon className="w-4 h-4 ml-2" />
@@ -138,23 +205,20 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
   );
 }
 
-// Reusable input field
-const Field = ({ label, value, onEdit }) => (
+const Field = ({ label, value, onEdit, readOnly, placeholder, required }) => (
   <div>
     <label className="block text-sm font-medium text-gray-500 mb-1">
       {label}
     </label>
-    <div className="flex">
-      <input
-        type="text"
-        value={value || ""}
-        onChange={(e) => onEdit(e.target.value)}
-        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-      />
-      <button className="ml-2 text-gray-400 hover:text-blue-500">
-        <EditIcon className="w-5 h-5" />
-      </button>
-    </div>
+    <input
+      type="text"
+      value={value || ""}
+      onChange={(e) => onEdit?.(e.target.value)}
+      readOnly={readOnly}
+      required={required}
+      placeholder={placeholder}
+      className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    />
   </div>
 );
 
