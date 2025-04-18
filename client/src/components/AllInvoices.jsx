@@ -87,6 +87,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
       <h1 className="text-3xl font-bold text-gray-800 mb-6 dark:text-white">
         All Invoices
       </h1>
+
       <div className="mb-6 flex items-center">
         <div className="relative w-full max-w-md">
           <input
@@ -94,9 +95,9 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             placeholder="Search by name or passport no..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md pl-10"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-md pl-10 placeholder-gray-400 dark:placeholder-gray-500"
           />
-          <SearchIcon className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+          <SearchIcon className="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-gray-500" />
         </div>
       </div>
 
@@ -105,9 +106,9 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
           <div
             key={invoice._id}
             onClick={() => handleClick(invoice)}
-            className="cursor-pointer border rounded-lg bg-white shadow-md hover:border-blue-500 hover:shadow-lg transition"
+            className="cursor-pointer border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
-            <div className="p-4 flex items-center border-b">
+            <div className="p-4 flex items-center border-b border-gray-200 dark:border-gray-700">
               {invoice.template?.company?.logo ? (
                 <img
                   src={invoice.template.company.logo}
@@ -115,7 +116,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                   className="w-10 h-10 mr-3 object-contain"
                 />
               ) : (
-                <div className="w-10 h-10 mr-3 bg-gray-200 rounded" />
+                <div className="w-10 h-10 mr-3 bg-gray-200 dark:bg-gray-600 rounded" />
               )}
 
               <div className="flex flex-row justify-between items-center w-full">
@@ -126,16 +127,17 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                     className="w-10 h-10 mr-3 object-contain"
                   />
                 ) : (
-                  <div className="w-10 h-10 mr-3 bg-gray-200 rounded" />
+                  <div className="w-10 h-10 mr-3 bg-gray-200 dark:bg-gray-600 rounded" />
                 )}
 
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {new Date(invoice.date).toLocaleDateString("en-GB")}
                 </span>
               </div>
             </div>
-            <div className="p-4 text-sm text-gray-500 space-y-1">
-              <p className="text-2xl">
+
+            <div className="p-4 text-sm text-gray-500 dark:text-gray-300 space-y-1">
+              <p className="text-2xl text-gray-800 dark:text-white">
                 <strong>
                   {invoice.invoiceDetails?.passengerName || "No Name"}
                 </strong>
@@ -154,7 +156,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                     e.stopPropagation();
                     handleDeleteInvoice(invoice._id);
                   }}
-                  className="text-gray-400 hover:text-red-600"
+                  className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
                 >
                   <TrashIcon className="w-4 h-4" />
                 </button>
@@ -162,8 +164,9 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             </div>
           </div>
         ))}
+
         {filteredInvoices.length === 0 && (
-          <p className="text-gray-500 text-center col-span-full">
+          <p className="text-gray-500 dark:text-gray-400 text-center col-span-full">
             No invoices found.
           </p>
         )}

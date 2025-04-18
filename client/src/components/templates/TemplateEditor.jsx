@@ -204,12 +204,12 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               Preview
             </h2>
           </div>
-          <div className="p-8" ref={previewRef}>
+          <div className="p-8 text-gray-800 dark:text-white" ref={previewRef}>
             {/* Invoice Template Preview */}
-            <div className="border rounded-md overflow-hidden border-gray-200 dark:border-gray-700">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
               {/* Header */}
               <div
-                className={`p-6 border-b flex justify-between items-start ${
+                className={`p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start ${
                   selectedSection === "header" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("header")}
@@ -234,8 +234,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   >
                     INVOICE
                   </h1>
-                  <p className="text-gray-500">#INV-2023-001</p>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 dark:text-gray-300">
+                    #INV-2023-001
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-300">
                     {new Date().toLocaleDateString("en-US", {
                       day: "2-digit",
                       month: "long",
@@ -244,21 +246,24 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </p>
                 </div>
               </div>
+
               {/* Company & Client Info */}
               <div
-                className={`p-6 grid grid-cols-2 gap-6 border-b ${
+                className={`p-6 grid grid-cols-2 gap-6 border-b border-gray-200 dark:border-gray-700 ${
                   selectedSection === "info" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("info")}
               >
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">
                     From
                   </h3>
                   <div className="whitespace-pre-line">{companyAddress}</div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">To</h3>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">
+                    To
+                  </h3>
                   <p className="font-medium flex justify-between">
                     {invoiceData?.passengerName}
                   </p>
@@ -276,9 +281,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </p>
                 </div>
               </div>
+
               {/* Flight Details */}
               <div
-                className={`p-6 border-b ${
+                className={`p-6 border-b border-gray-200 dark:border-gray-700 ${
                   selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("flights")}
@@ -327,9 +333,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </div>
                 ))}
               </div>
+
               {/* Pricing */}
               <div
-                className={`p-6 border-b ${
+                className={`p-6 border-b border-gray-200 dark:border-gray-700 ${
                   selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("pricing")}
@@ -352,6 +359,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </div>
                 </div>
               </div>
+
               {/* Footer */}
               {showFooter && (
                 <div
@@ -361,12 +369,13 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   onClick={() => setSelectedSection("footer")}
                   style={{ backgroundColor: accentColor + "10" }}
                 >
-                  <p className="text-gray-700  dark:text-white">{footerText}</p>
+                  <p className="text-gray-700 dark:text-white">{footerText}</p>
                 </div>
               )}
             </div>
           </div>
         </div>
+
         {/* Editor Controls */}
         <div className="lg:w-1/3 bg-white dark:bg-gray-800 rounded-lg shadow-md">
           <div className="p-6 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
