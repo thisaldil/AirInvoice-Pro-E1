@@ -198,18 +198,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
       </div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Template Preview */}
-        <div className="lg:w-2/3 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-          <div className="p-6 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+        <div className="lg:w-2/3 bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
+          <div className="p-6 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <h2 className="font-medium text-gray-800 dark:text-white">
               Preview
             </h2>
           </div>
-          <div className="p-8 text-gray-800 dark:text-white" ref={previewRef}>
-            {/* Invoice Template Preview */}
-            <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
+          <div className="p-8" ref={previewRef}>
+            <div className="border dark:border-gray-700 rounded-md overflow-hidden">
               {/* Header */}
               <div
-                className={`p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start ${
+                className={`p-6 border-b dark:border-gray-700 flex justify-between items-start ${
                   selectedSection === "header" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("header")}
@@ -234,10 +233,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   >
                     INVOICE
                   </h1>
-                  <p className="text-gray-500 dark:text-gray-300">
+                  <p className="text-gray-500 dark:text-gray-400">
                     #INV-2023-001
                   </p>
-                  <p className="text-gray-500 dark:text-gray-300">
+                  <p className="text-gray-500 dark:text-gray-400">
                     {new Date().toLocaleDateString("en-US", {
                       day: "2-digit",
                       month: "long",
@@ -247,58 +246,65 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                 </div>
               </div>
 
-              {/* Company & Client Info */}
+              {/* Info */}
               <div
-                className={`p-6 grid grid-cols-2 gap-6 border-b border-gray-200 dark:border-gray-700 ${
+                className={`p-6 grid grid-cols-2 gap-6 border-b dark:border-gray-700 ${
                   selectedSection === "info" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("info")}
               >
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                     From
                   </h3>
-                  <div className="whitespace-pre-line">{companyAddress}</div>
+                  <div className="whitespace-pre-line dark:text-white">
+                    {companyAddress}
+                  </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                     To
                   </h3>
-                  <p className="font-medium flex justify-between">
+                  <p className="font-medium flex justify-between dark:text-white">
                     {invoiceData?.passengerName}
                   </p>
-                  <p className="flex justify-between">
+                  <p className="flex justify-between dark:text-white">
                     Passport: {invoiceData?.passportNumber || "--"}
                   </p>
-                  <p className="flex justify-between">
+                  <p className="flex justify-between dark:text-white">
                     Nationality: {invoiceData?.nationality || "--"}
                   </p>
-                  <p className="flex justify-between">
+                  <p className="flex justify-between dark:text-white">
                     DOB: {invoiceData?.dob || "--"}
                   </p>
-                  <p className="flex justify-between">
+                  <p className="flex justify-between dark:text-white">
                     Gender: {invoiceData?.gender || "--"}
                   </p>
                 </div>
               </div>
 
-              {/* Flight Details */}
+              {/* Flights */}
               <div
-                className={`p-6 border-b border-gray-200 dark:border-gray-700 ${
+                className={`p-6 border-b dark:border-gray-700 ${
                   selectedSection === "flights" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("flights")}
               >
-                <h3 className="font-medium mb-4" style={{ color: accentColor }}>
+                <h3
+                  className="font-medium mb-4 dark:text-white"
+                  style={{ color: accentColor }}
+                >
                   Flight Details
                 </h3>
                 {invoiceData?.flightDetails?.map((flight, i) => (
                   <div
                     key={i}
-                    className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md text-gray-800 dark:text-white"
+                    className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md"
                   >
                     <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">Flight #{i + 1}</h4>
+                      <h4 className="font-medium dark:text-white">
+                        Flight #{i + 1}
+                      </h4>
                       <span
                         className="text-sm font-medium"
                         style={{ color: accentColor }}
@@ -308,25 +314,29 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                     </div>
                     <div className="flex justify-between">
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-300">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           From
                         </p>
-                        <p className="font-medium">{flight.from}</p>
-                        <p className="text-sm">
+                        <p className="font-medium dark:text-white">
+                          {flight.from}
+                        </p>
+                        <p className="text-sm dark:text-gray-300">
                           {flight.departureDate} {flight.departureTime}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-500 dark:text-gray-300">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           To
                         </p>
-                        <p className="font-medium">{flight.to}</p>
-                        <p className="text-sm">
+                        <p className="font-medium dark:text-white">
+                          {flight.to}
+                        </p>
+                        <p className="text-sm dark:text-gray-300">
                           {flight.arrivalDate} {flight.arrivalTime}
                         </p>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-300 mt-2">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                       Seat: {flight.seatNumber} | Class: {flight.class} |
                       Baggage: {flight.baggageAllowance}
                     </div>
@@ -336,15 +346,18 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
               {/* Pricing */}
               <div
-                className={`p-6 border-b border-gray-200 dark:border-gray-700 ${
+                className={`p-6 border-b dark:border-gray-700 ${
                   selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setSelectedSection("pricing")}
               >
-                <h3 className="font-medium mb-4" style={{ color: accentColor }}>
+                <h3
+                  className="font-medium mb-4 dark:text-white"
+                  style={{ color: accentColor }}
+                >
                   Pricing Details
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-2 dark:text-white">
                   <div className="flex justify-between">
                     <span>Total Amount</span>
                     <span>{invoiceData?.totalAmount || "--"}</span>
@@ -369,7 +382,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   onClick={() => setSelectedSection("footer")}
                   style={{ backgroundColor: accentColor + "10" }}
                 >
-                  <p className="text-gray-700 dark:text-white">{footerText}</p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {footerText}
+                  </p>
                 </div>
               )}
             </div>
