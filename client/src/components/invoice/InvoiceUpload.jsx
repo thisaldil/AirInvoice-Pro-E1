@@ -58,101 +58,107 @@ function InvoiceUpload({ onUpload }) {
   const extractTextFromPDF = async (file) => {
     setIsProcessing(true);
     setError(null);
-  
+
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("apikey", "K89085700888957");
       formData.append("OCREngine", "2");
       formData.append("isOverlayRequired", "false");
-  
+
       const response = await axios.post("https://api.ocr.space/parse/image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-  
-      let raw = response.data?.ParsedResults?.[0]?.ParsedText || "";
-      // console.log("Raw OCR Text:", raw);
-  
-      raw = raw.replace(/Powered By Ticket Gadget.*|Verify Docs|Flight|Page.*|SSR|SSR Description/g, "")
-               .replace(/\n{2,}/g, "\n")
-               .trim();
-  
+
+      const raw = response.data?.ParsedResults?.[0]?.ParsedText || "";
+      console.log("RAW:", raw);
+
       const bookingRefMatch = raw.match(/Booking Ref:\s*(\d+)/i);
       const airlineRefMatch = raw.match(/Airline Ref:\s*(\d+)/i);
       const bookingReference = bookingRefMatch
         ? bookingRefMatch[1].trim()
         : airlineRefMatch
-        ? airlineRefMatch[1].trim()
-        : "";
-  
-      const passengerNameMatch = raw.match(/E-TICKET\s+([A-Z\s\/]+MR)/i) || raw.match(/Passenger Name\s+([A-Z\s\/]+MR)/i);
-      const passengerName = passengerNameMatch ? passengerNameMatch[1].trim() : "";
-  
-      const ticketNumberMatch = raw.match(/Ticket Number\s+(\d{10,})/i);
+          ? airlineRefMatch[1].trim()
+          : "";
+
+      const passengerNameMatch = raw.match(/P\s+[A-Z]+\/[A-Z]\s+[A-Z]+\s+[A-Z]+/i);
+      const passengerName = passengerNameMatch ? passengerNameMatch[0].trim() : "";
+
+      const ticketNumberMatch = raw.match(/Ticket Number\s*(\d+)/i);
       const ticketNumber = ticketNumberMatch ? ticketNumberMatch[1].trim() : "";
-  
+
+      const flightRegex = /(G9\s+\d{3,4})\s+([\s\S]*?)(?=G9\s+\d{3,4}|$)/g;
+      let flightMatch;
       const flightDetails = [];
-  
-      const flightChunks = raw.split(/Status:\s*Confirmed/i).filter(Boolean);
-  
-      flightChunks.forEach((section) => {
-        const flightNumber = section.match(/G9\s*\d{3,4}/)?.[0] || "";
-        const airline = section.includes("AirArabia") ? "AirArabia" : "";
-  
-        const airportMatches = [...section.matchAll(/\b([A-Z]{3})\b/g)].map((m) => m[1]);
-        const from = airportMatches[0] || "";
-        const to = airportMatches[1] || "";
-  
-        const dates = [...section.matchAll(/\d{2} \w{3} \d{4}/g)].map((m) => m[0]);
-        const departureDate = dates[0] || "";
-  
-        const times = [...section.matchAll(/\d{2}:\d{2}/g)].map((m) => m[0]);
-        const departureTime = times[0] || "";
-        const arrivalTime = times[1] || "";
-  
-        const classMatch = section.match(/ECONOMY|BUSINESS|FIRST/i);
-        const travelClass = classMatch ? classMatch[0] : "";
-  
+
+      while ((flightMatch = flightRegex.exec(raw)) !== null) {
+        const flightNumber = flightMatch[1].trim();
+        const section = flightMatch[2];
+
+        const airline = section.match(/AirArabia|Emirates|Qatar Airways|FlyDubai|Etihad/i)?.[0] || "";
+        const status = section.match(/Status:\s*(.*)/i)?.[1]?.trim() || "Confirmed";
+
+        const dateMatches = [...section.matchAll(/(\d{2}\s+[A-Z]{3}\s+\d{4})/g)];
+        const departureDate = dateMatches[0]?.[1] || "";
+        const arrivalDate = dateMatches[1]?.[1] || departureDate;
+
+        const timeMatches = [...section.matchAll(/(\d{2}:\d{2})/g)];
+        const departureTime = timeMatches[0]?.[1] || "";
+        const arrivalTime = timeMatches[1]?.[1] || "";
+
+        const fromMatch = section.match(/\bCMB\b/)?.[0] || "";
+        const toMatch = section.match(/\bSHJ\b/)?.[0] || "";
+
+        const terminal = section.match(/Terminal:\s*(.*)/i)?.[1]?.trim() || "";
+        const travelClass = section.match(/ECONOMY|BUSINESS|FIRST/i)?.[0] || "";
+
         flightDetails.push({
           flightNumber,
           airline,
-          from,
-          to,
+          from: fromMatch,
+          to: toMatch,
           departureDate,
+          arrivalDate,
           departureTime,
           arrivalTime,
+          departureTerminal: terminal,
           class: travelClass,
-          status: "Confirmed",
+          status,
+          ticketNumber,
         });
+      }
+
+      // Sort by date+time
+      flightDetails.sort((a, b) => {
+        const aDT = new Date(`${a.departureDate} ${a.departureTime}`);
+        const bDT = new Date(`${b.departureDate} ${b.departureTime}`);
+        return aDT - bDT;
       });
-  
-      const seatMatch = raw.match(/SEAT\s+(\S+)/i);
-      const baggageMatch = raw.match(/BAGGAGE\s+(.+?)(?:\n|$)/i);
-  
-      if (flightDetails.length > 0 && seatMatch) {
-        flightDetails[0].seatNumber = seatMatch[1];
+
+      const ssrSection = raw.split("SSR Description")?.[1] || "";
+
+      if (flightDetails.length > 0) {
+        flightDetails[0].seatNumber = ssrSection.match(/SEAT\s*(\S+)/i)?.[1] || "";
+        flightDetails[0].meal = ssrSection.match(/MEAL\s*(\S+)/i)?.[1] || "";
+        flightDetails[0].baggageAllowance = ssrSection.match(/BAGGAGE\s*(.*)/i)?.[1]?.trim() || "";
       }
-  
-      if (flightDetails.length > 0 && baggageMatch) {
-        flightDetails[0].baggageAllowance = baggageMatch[1].trim();
-      }
-  
+
       const formattedInvoice = {
         passengerName,
         bookingReference,
         transactionId: ticketNumber,
         flightDetails,
       };
-  
+
+      console.log("details", flightDetails);
       onUpload(formattedInvoice);
-      console.log("Extracted Invoice:", formattedInvoice);
     } catch (err) {
       console.error("OCR.space error:", err);
       setError("An error occurred while extracting text from PDF.");
     } finally {
       setIsProcessing(false);
     }
-  };  
+  };
 
   const handleProcessInvoice = () => {
     if (!file) return;
