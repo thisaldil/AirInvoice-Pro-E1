@@ -157,10 +157,10 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
                     Airline: {flight.airline || "-"} | Ticket No:{" "}
                     {flight.ticketNumber || "-"}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  {/* <div className="text-sm text-gray-500">
                     Seat: {flight.seatNumber || "-"} | Baggage:{" "}
                     {flight.baggageAllowance || "-"}
-                  </div>
+                  </div> */}
                 </div>
               ))
             ) : (
