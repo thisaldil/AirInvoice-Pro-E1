@@ -71,7 +71,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     try {
       if (invoiceData) {
         const content = previewRef.current;
-        const fileName = `Invoice_${invoiceData.bookingReference || 'Draft'}_${new Date().toISOString().split('T')[0]}`;
+        const bookingRef = invoiceData.bookingReference || 'DRAFT';
+        const currentDate = new Date().toISOString().split('T')[0];
+        const fileName = `${bookingRef}-invoice-${currentDate}`;
 
         const opt = {
           margin: [0.2, 0.2, 0.2, 0.2],
@@ -99,14 +101,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           for (let i = 1; i <= pageCount; i++) {
             pdf.setPage(i);
 
-            // Page number - bottom right
+            const yPosition = pageHeight - 10; 
+
             pdf.setFontSize(10);
-            pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 50, pageHeight - 20);
+            pdf.setTextColor(100);
+
+            // Page number - bottom right
+            pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 50, yPosition);
 
             // Footer text - bottom center
-            pdf.setFontSize(10);
-            pdf.setTextColor(150);
-            pdf.text("Powered by Air Invoice Pro", pageWidth / 2, pageHeight - 20, { align: 'center' });
+            pdf.text("Powered by Air Invoice Pro", pageWidth / 2, yPosition, { align: 'center' });
+
           }
 
           return pdf.output('blob');
