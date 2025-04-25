@@ -15,15 +15,19 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
   }, []);
 
   useEffect(() => {
-    const requiredFields = [
-      invoice.passportNumber,
-      invoice.nationality,
-      invoice.dob,
-      invoice.gender,
-      invoice.totalAmount,
-    ];
-    const allFlightsValid = invoice.flightDetails?.length > 0;
-    setIsValid(requiredFields.every(Boolean) && allFlightsValid);
+    // Check if all required fields have values
+    const hasRequiredFields = 
+      invoice.passportNumber?.trim() &&
+      invoice.nationality?.trim() &&
+      invoice.dob?.trim() &&
+      invoice.gender?.trim() &&
+      invoice.totalAmount?.toString().trim();
+
+    // Check if we have flight details
+    const hasFlightDetails = Array.isArray(invoice.flightDetails) && invoice.flightDetails.length > 0;
+
+    // Set valid if both conditions are met
+    setIsValid(hasRequiredFields && hasFlightDetails);
   }, [invoice]);
 
   const handleFieldEdit = (field, value) => {
@@ -78,7 +82,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
                 Nationality
               </label>
               <select
-                value={invoice.nationality || "Sri Lanka"}
+                value={invoice.nationality || ""}
                 onChange={(e) => handleFieldEdit("nationality", e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 required
@@ -154,8 +158,8 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-gray-500">
-                    Airline: {flight.airline || "-"} | Ticket No:{" "}
-                    {flight.ticketNumber || "-"}
+                    Airline: {flight.airline || "-"} | Terminal:{" "}
+                    {flight.departureTerminal || "-"}
                   </div>
                   {/* <div className="text-sm text-gray-500">
                     Seat: {flight.seatNumber || "-"} | Baggage:{" "}

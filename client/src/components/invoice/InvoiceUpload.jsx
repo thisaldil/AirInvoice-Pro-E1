@@ -55,90 +55,34 @@ function InvoiceUpload({ onUpload }) {
     }
   };
 
-  const extractTextFromPDF = async (file) => {
+  const processTicket = async (file) => {
     setIsProcessing(true);
     setError(null);
   
     try {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("apikey", "K89085700888957");
-      formData.append("OCREngine", "2");
-  
-      const response = await axios.post("https://api.ocr.space/parse/image", formData, {
+      formData.append("ticket", file);
+
+      const response = await axios.post("http://localhost:5000/invoice/upload-ticket", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-  
-      const raw = response.data?.ParsedResults?.[0]?.ParsedText || "";
-      console.log("OCR Result:", raw);
-  
-      // Extract basic data
-      const bookingReference = raw.match(/Booking Ref:\s*(\w+)/i)?.[1] || "";
-      const ticketNumber = raw.match(/Ticket Number\s*:?(\d+)/i)?.[1] || "";
-      const passengerName = raw.match(/([A-Z]{1,2}\s+[A-Z]+\/[A-Z]+(?:\s+[A-Z]+)?(?:\s+MR|MS|MRS)?)/i)?.[1] || "";
-  
-      // Parse flight segments from text
-      const parseFlightSegments = (text) => {
-        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-        const flights = [];
-  
-        for (let i = 0; i < lines.length; i++) {
-          const dateMatch = lines[i].match(/^(\d{2}\s+[A-Z]{3}\s+\d{4})$/);
-          if (dateMatch && lines[i + 1]) {
-            const date = dateMatch[1];
-            const flightNumber = lines[i + 1].match(/([A-Z]{2})\s*(\d{3,4})/)?.[0] || "";
-            const airline = lines[i + 2]?.match(/AirArabia|Emirates|Qatar Airways|FlyDubai|Etihad/i)?.[0] || "";
-  
-            const from = lines[i + 3]?.match(/\b[A-Z]{3}\b/)?.[0] || "";
-            const departureTime = lines[i + 4]?.match(/\d{2}:\d{2}/)?.[0] || "";
-            const terminal = lines[i + 4]?.match(/Terminal:\s*(.*)/i)?.[1] || "";
-  
-            const to = lines[i + 5]?.match(/\b[A-Z]{3}\b/)?.[0] || "";
-            const arrivalTime = lines[i + 6]?.match(/\d{2}:\d{2}/)?.[0] || "";
-  
-            if (flightNumber && from && to) {
-              flights.push({
-                flightNumber,
-                airline,
-                from,
-                to,
-                departureDate: date,
-                arrivalDate: date, // You can enhance to detect next-day if needed
-                departureTime,
-                arrivalTime,
-                departureTerminal: terminal,
-                class: "ECONOMY",
-                status: "Confirmed",
-                ticketNumber,
-              });
-            }
-          }
-        }
-  
-        return flights;
-      };
-  
-      const flightDetails = parseFlightSegments(raw);
-  
-      const formattedInvoice = {
-        passengerName,
-        bookingReference,
-        transactionId: ticketNumber,
-        flightDetails,
-      };
-  
-      onUpload(formattedInvoice);
+
+      if (response.data) {
+        onUpload(response.data);
+      } else {
+        throw new Error("Failed to extract ticket details");
+      }
     } catch (err) {
-      console.error("OCR.space error:", err);
-      setError("Failed to extract text from PDF.");
+      console.error("Ticket processing error:", err);
+      setError("Failed to process the ticket. Please try again.");
     } finally {
       setIsProcessing(false);
     }
-  };  
+  };
 
   const handleProcessInvoice = () => {
     if (!file) return;
-    extractTextFromPDF(file);
+    processTicket(file);
   };
 
   const handleRemoveFile = () => {
@@ -148,8 +92,8 @@ function InvoiceUpload({ onUpload }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Invoice</h1>
-      <p className="text-gray-600 mb-8">Upload an invoice to extract its text.</p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Air Ticket</h1>
+      <p className="text-gray-600 mb-8">Upload an air ticket to extract flight details.</p>
 
       {!file ? (
         <div
@@ -161,7 +105,7 @@ function InvoiceUpload({ onUpload }) {
         >
           <FileUpIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-700 mb-2">
-            Drag & Drop your invoice here
+            Drag & Drop your ticket here
           </h3>
           <p className="text-gray-500 mb-6">or</p>
           <label className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md cursor-pointer transition-colors">
@@ -183,7 +127,7 @@ function InvoiceUpload({ onUpload }) {
       ) : (
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-800">Selected File</h3>
+            <h3 className="text-lg font-medium text-gray-800">Selected Ticket</h3>
             <button onClick={handleRemoveFile} className="text-gray-400 hover:text-red-500">
               <XIcon className="w-5 h-5" />
             </button>
@@ -206,7 +150,7 @@ function InvoiceUpload({ onUpload }) {
               disabled={isProcessing}
               className={`px-4 py-2 rounded-md font-medium ${isProcessing ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
             >
-              {isProcessing ? "Processing..." : "Extract Text"}
+              {isProcessing ? "Processing..." : "Extract Details"}
             </button>
           </div>
         </div>

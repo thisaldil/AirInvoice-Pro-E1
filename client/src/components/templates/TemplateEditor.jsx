@@ -109,7 +109,6 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           },
           priceDetails: {
             totalAmount: invoiceData.totalAmount,
-            paymentMethod: invoiceData.paymentMethod,
             transactionId: invoiceData.transactionId,
           },
         });
@@ -211,7 +210,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   >
                     INVOICE
                   </h1>
-                  <p className="text-gray-500">#INV-2023-001</p>
+                  <p className="text-gray-500">Booking Ref: {invoiceData?.bookingReference || ''}</p>
                   <p className="text-gray-500">
                     {new Date().toLocaleDateString("en-US", {
                       day: "2-digit",
@@ -234,7 +233,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-2">To</h3>
-                  <p className="font-medium flex justify-between">{invoiceData?.passengerName}</p>
+                  <p className="font-medium flex justify-between">{invoiceData?.passengerName || '--'}</p>
                   <p className="flex justify-between">Passport: {invoiceData?.passportNumber || '--'}</p>
                   <p className="flex justify-between">Nationality: {invoiceData?.nationality || '--'}</p>
                   <p className="flex justify-between">DOB: {invoiceData?.dob || '--'}</p>
@@ -293,10 +292,6 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   <div className="flex justify-between">
                     <span>Total Amount</span>
                     <span>{invoiceData?.totalAmount || "--"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Payment Method</span>
-                    <span>{invoiceData?.paymentMethod || "--"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Transaction ID</span>

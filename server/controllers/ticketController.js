@@ -7,50 +7,64 @@ exports.extractTicketData = async (req, res) => {
     const filePath = path.join(__dirname, '../uploads', file.filename);
     const rawText = await extractTicketText(filePath);
 
-    // Basic fields
-    const passengerName = rawText.match(/[A-Z]+\/[A-Z]+(?:\s+[A-Z]+)?(?:\s+MR|MS|MRS)?/i)?.[0] || "";
-    const bookingRef = rawText.match(/Booking Ref:?\s*([\w\d]+)/i)?.[1] || "";
-    const ticketNumber = rawText.match(/Ticket Number:?\s*(\d+)/i)?.[1] || "";
+    // Basic info
+    const passengerName = rawText.match(/[A-Z]+\s+[A-Z]+\/[A-Z]+(?:\s+[A-Z]+)?(?:\s+MR|MS|MRS)?/i)?.[0] || "";
+    const bookingRef = rawText.match(/Booking Ref:\s*(\d+)/i)?.[1] || "";
+    const ticketNumber = rawText.match(/Ticket Number\s*\n\s*(\d+)/i)?.[1] || "";
 
-    // Flight segment extraction (robust, layout-independent)
-    const parseFlightDetails = (text) => {
-      const flights = [];
+    // Find the class once - it will be the same for all flights
+    const classMatch = rawText.match(/\b(ECONOMY|PREMIUM ECONOMY|BUSINESS|FIRST)\b/);
+    const travelClass = classMatch ? classMatch[1] : "ECONOMY";
 
-      const pattern = /(\d{2}\s+[A-Z]{3}\s+\d{4})\s+(G9\s*\d+)[\s\S]*?(CMB|SHJ)[\s\S]*?(\d{2}:\d{2})[\s\S]*?(CMB|SHJ)[\s\S]*?(\d{2}:\d{2})[\s\S]*?AirArabia[\s\S]*?Status:?\s*(Confirmed|Pending|Cancelled)?/gi;
+    const flightDetails = [];
+    
+    // Split the text into sections by date headers
+    const sections = rawText.split(/(?=\d{2}\s+[A-Z]{3}\s+\d{4}\s*\n)/);
+    
+    for (const section of sections) {
+      // Extract date
+      const dateMatch = section.match(/(\d{2}\s+[A-Z]{3}\s+\d{4})/);
+      if (!dateMatch) continue;
 
-      let match;
-      while ((match = pattern.exec(text)) !== null) {
-        const [
-          _full,
-          departureDate,
-          flightNumber,
-          from,
-          departureTime,
-          to,
-          arrivalTime,
-          status
-        ] = match;
+      // Extract flight number - looking for airline codes followed by numbers
+      const flightMatch = section.match(/(?:G9|AA|AC|AF|AI|AY|AZ|BA|BR|CA|CX|DL|EK|EY|GA|JL|KE|KL|LH|LO|LX|MH|MS|NH|NZ|OS|PK|QF|QR|SA|SK|SQ|SU|TG|TK|UA|UL|VN|VS|WY|ZH)\s*(\d+)/);
+      if (!flightMatch) continue;
 
-        flights.push({
-          flightNumber: flightNumber.trim().replace(/\s+/, " "),
-          airline: "AirArabia",
-          from,
-          to,
-          departureDate,
-          arrivalDate: departureDate,
-          departureTime,
-          arrivalTime,
-          departureTerminal: "", // Optional - not present in all layouts
-          class: "ECONOMY",
-          status: status || "Confirmed",
-          ticketNumber
+      // Extract departure info
+      const departureMatch = section.match(/([A-Z]{3})\s*\n([^,\n]+)\s*\n([^,\n]+),\s*([^\n]+)\s*\n(\d{2}\s+[A-Z]{3}\s+\d{4}\s+\d{2}:\d{2})/);
+      
+      // Extract arrival info - look for the next airport code after the departure
+      const arrivalMatch = section.match(/(?:.*?\n){5,10}([A-Z]{3})\s*\n([^,\n]+)\s*\n([^,\n]+),\s*([^\n]+)\s*\n(\d{2}\s+[A-Z]{3}\s+\d{4}\s+\d{2}:\d{2})/s);
+
+      if (departureMatch && arrivalMatch) {
+        // Extract terminal
+        const terminalMatch = section.match(/Terminal:\s*([^\n]+)/);
+        
+        // Extract airline and status - look for any word or phrase between newlines that could be an airline
+        const airlineMatch = section.match(/\n([A-Za-z\s]+(?:Airways|Airlines|Air|Aviation)?)\n/);
+        const statusMatch = section.match(/Status:\s*([^\n]+)/);
+
+        // Parse departure and arrival times
+        const departureDateTime = departureMatch[5].match(/(\d{2}\s+[A-Z]{3}\s+\d{4})\s+(\d{2}:\d{2})/);
+        const arrivalDateTime = arrivalMatch[5].match(/(\d{2}\s+[A-Z]{3}\s+\d{4})\s+(\d{2}:\d{2})/);
+
+        flightDetails.push({
+          flightNumber: flightMatch[0].replace(/\s+/, ' '), // Ensure single space between code and number
+          airline: airlineMatch ? airlineMatch[1].trim() : "",
+          from: departureMatch[1],
+          fromLocation: `${departureMatch[2].trim()}\n${departureMatch[3].trim()}, ${departureMatch[4].trim()}`,
+          to: arrivalMatch[1],
+          toLocation: `${arrivalMatch[2].trim()}\n${arrivalMatch[3].trim()}, ${arrivalMatch[4].trim()}`,
+          departureDate: departureDateTime[1],
+          departureTime: departureDateTime[2],
+          arrivalDate: arrivalDateTime[1],
+          arrivalTime: arrivalDateTime[2],
+          departureTerminal: terminalMatch ? terminalMatch[1].trim() : "",
+          class: travelClass,
+          status: statusMatch ? statusMatch[1].trim() : "Confirmed"
         });
       }
-
-      return flights;
-    };
-
-    const flightDetails = parseFlightDetails(rawText);
+    }
 
     return res.json({
       passengerName,
