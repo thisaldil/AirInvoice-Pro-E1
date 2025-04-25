@@ -55,55 +55,26 @@ function InvoiceUpload({ onUpload }) {
     }
   };
 
-  const extractTextFromPDF = async (file) => {
+  const processTicket = async (file) => {
     setIsProcessing(true);
     setError(null);
-
+  
     try {
       const formData = new FormData();
-      formData.append("invoice", file);
+      formData.append("ticket", file);
 
-      const response = await axios.post("http://localhost:5000/invoice/upload", formData, {
+      const response = await axios.post("http://localhost:5000/invoice/upload-ticket", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const raw = response.data.text;
-
-      const extract = (label) => {
-        const match = raw.match(new RegExp(`${label}:\\s*(.*)`));
-        return match ? match[1].trim() : "";
-      };
-
-      const formattedInvoice = {
-        passengerName: extract("Passenger Name"),
-        bookingReference: extract("Booking Reference"),
-        passportNumber: extract("Passport Number"),
-        nationality: extract("Nationality"),
-        dob: extract("Date of Birth"),
-        gender: extract("Gender"),
-        totalAmount: extract("Total Amount"),
-        paymentMethod: extract("Payment Method"),
-        transactionId: extract("Transaction ID"),
-        flightDetails: [
-          {
-            flightNumber: extract("Flight Number"),
-            from: extract("From"),
-            to: extract("To"),
-            departureDate: extract("Departure Date"),
-            departureTime: extract("Departure Time"),
-            arrivalDate: extract("Arrival Date"),
-            arrivalTime: extract("Arrival Time"),
-            seatNumber: extract("Seat Number"),
-            class: extract("Class"),
-            baggageAllowance: extract("Baggage"),
-          },
-        ],
-      };
-
-      onUpload(formattedInvoice);
+      if (response.data) {
+        onUpload(response.data);
+      } else {
+        throw new Error("Failed to extract ticket details");
+      }
     } catch (err) {
-      console.error("OCR error:", err);
-      setError("An error occurred while extracting text from PDF.");
+      console.error("Ticket processing error:", err);
+      setError("Failed to process the ticket. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -111,7 +82,7 @@ function InvoiceUpload({ onUpload }) {
 
   const handleProcessInvoice = () => {
     if (!file) return;
-    extractTextFromPDF(file);
+    processTicket(file);
   };
 
   const handleRemoveFile = () => {
@@ -121,8 +92,8 @@ function InvoiceUpload({ onUpload }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Invoice</h1>
-      <p className="text-gray-600 mb-8">Upload an invoice to extract its text.</p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Air Ticket</h1>
+      <p className="text-gray-600 mb-8">Upload an air ticket to extract flight details.</p>
 
       {!file ? (
         <div
@@ -134,7 +105,7 @@ function InvoiceUpload({ onUpload }) {
         >
           <FileUpIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-700 mb-2">
-            Drag & Drop your invoice here
+            Drag & Drop your ticket here
           </h3>
           <p className="text-gray-500 mb-6">or</p>
           <label className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md cursor-pointer transition-colors">
@@ -156,7 +127,7 @@ function InvoiceUpload({ onUpload }) {
       ) : (
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-gray-800">Selected File</h3>
+            <h3 className="text-lg font-medium text-gray-800">Selected Ticket</h3>
             <button onClick={handleRemoveFile} className="text-gray-400 hover:text-red-500">
               <XIcon className="w-5 h-5" />
             </button>
@@ -179,7 +150,7 @@ function InvoiceUpload({ onUpload }) {
               disabled={isProcessing}
               className={`px-4 py-2 rounded-md font-medium ${isProcessing ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
             >
-              {isProcessing ? "Processing..." : "Extract Text"}
+              {isProcessing ? "Processing..." : "Extract Details"}
             </button>
           </div>
         </div>

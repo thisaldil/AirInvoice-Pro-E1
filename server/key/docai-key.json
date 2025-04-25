@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "durable-trainer-438215-r6",
+  "private_key_id": "3b2b8f23ee7370ecbdcaa4d9e2a8843f94c821bc",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC1l2lWT8Lnq+in\nhbZktn/Pq/bT66+JDyyZtZF/qcXw2Wtpi9RHUkyPc5DEpncG358azTW85zsfdXhZ\nPoHbyoF+LbWx4etkPIuo3YzuEMlYxM+CquRU9x1Ur0Dlbvph6qOxTTWLtUeTY+4+\nwq3V3DwGEbNcRAuNaIY+luQyBnWmsadh4T1QXRF+hjRYq8e5BAWJfBDAQ/4sHCFb\niZlSMekCGOFJgBTNF6X7fdMNmRq/CBYxfGa6WVXrWAbOINE/89x2Zh64PIJnehgA\nNQCjzPG5SV6FQEayEsaCTNRnAHnbEUN04/wPzyVP9Q5aX9PQ73A8iA9BogGQrW0g\nlytjZIMRAgMBAAECggEACbatYiTmxnZnUzwPffhWgpOuora9xLV0wPgkbfwf5CVN\nM0UmjXYf4Es3QuhV/551/VIIKNsESkeCBjbAwt1kleJOENOGlZhjhByYeEzvkvmx\ne/Tg5+acFraVNcX89hXovF2RRVrkwZlGhOxBrj9B+rUhr114cg+q9q14TBtqWbNE\njTFwcAqD2C1smrXZOXvtkBhEceljsIRUux2UXciwZ9Km8UDfBYCqO5lPpwM5Eitt\n4jDcLKriCnEpQMfDkfnnhCnetxRiCdP1KYyw+bhyTLB2Bpqr4NZgjdMLvwgm7Lpb\nO3zz5OjFGLxiONs90PSYsEK+V9YSEzkjT29dxAnvPQKBgQDw2fSDzj11j84xSY6w\nc5HpnomJh1vm0RV62FWZgph/UsESZmOO2fvgJOlJIgi3tDSzL29hVMQbWPi0EN4w\ndd5d4NIIifhDj7LqW2Njt8P+UVVrDnImNDH+G22nWFafwD79ceNzqM63ZZscf7Q/\ntnWWpwCQoINwjoA0MHbyKdIllwKBgQDBA0nPL5Wyw1KShKyvuO9qd1yeMAi2s7/Y\n3ez78Dy7EewKe24YlIQMBRsa03mY22up3qDYTVWlSSNkamBGWu4fYSrRfhmEd/hT\nF770DxrKrDlenFyo/Hvue0yZJwMwSFgIfNeirUzcgsRxKtFCQLXza8CB0w/3zkPS\nMv3KOONBlwKBgC6HnOJd1KfCmW4SLNvP5+9/LkkAenO0DvdFlfvrK/TlEuGwICm3\n2R4rY1o6lf6PdOLtFhJyotQ5swpue85W5xex2EHIDctXlpQKBcB8/wNByUO+bbUN\nvl6+A8ghm9KO/FxQRUXR5eWuXnH6BeONJ1hseQJ30AzNqtzqRAByreOPAoGAftMh\nUbFrxQ3RGRNywPhc4PFTe2IGp76Oxfp1OMqPrUBGgFDAdAhKh/dm6wagNM+g+/qc\nZ+TQ7Q2U4ut/HVuschQP5Z3dOIz4L+k/gPDX4uqtu7w0qplU+cws9cmLr9MpfVJD\nAtKq2Y5XdCD1ZXpN1Igt82BzcponOFxnJNSihzsCgYBGeRFTMqVAm19bwy1mI641\nfHbN+1VMiAd5vx5eaRKegmPRWXQR/IQCTSDhPEQ8vqjeM5p9rqTt03RJL4SNGw1u\nXobhbntfLX/TejzA+FMZNaxv9EeQzFNsxnQigzUyKh27cfRSDVscKKVOl3QQvC/2\nWIOiaGUQv7Cavx4tvKKOXw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "docai-service@durable-trainer-438215-r6.iam.gserviceaccount.com",
+  "client_id": "105315570184258572603",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/docai-service%40durable-trainer-438215-r6.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
