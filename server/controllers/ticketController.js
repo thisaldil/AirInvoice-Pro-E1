@@ -1,10 +1,12 @@
 const path = require('path');
+const fs = require('fs');
 const { extractTicketText } = require('../services/googleDocAiService');
 
 exports.extractTicketData = async (req, res) => {
+  let filePath;
   try {
     const file = req.file;
-    const filePath = path.join(__dirname, '../uploads', file.filename);
+    filePath = path.join(__dirname, '../uploads', file.filename);
     const rawText = await extractTicketText(filePath);
 
     // Basic info
@@ -66,6 +68,13 @@ exports.extractTicketData = async (req, res) => {
       }
     }
 
+    // Clean up the uploaded file after processing
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error('Error deleting file:', err);
+      }
+    });
+
     return res.json({
       passengerName,
       bookingReference: bookingRef,
@@ -74,6 +83,14 @@ exports.extractTicketData = async (req, res) => {
     });
 
   } catch (error) {
+    // Clean up the file even if there's an error
+    if (filePath) {
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error('Error deleting file:', err);
+        }
+      });
+    }
     console.error("DocAI error:", error);
     return res.status(500).json({ error: "Failed to extract ticket details", detail: error.message });
   }

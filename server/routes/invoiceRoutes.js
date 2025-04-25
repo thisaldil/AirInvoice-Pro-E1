@@ -5,14 +5,35 @@ const router = express.Router();
 const invoiceController = require("../controllers/invoiceController");
 const ticketController = require('../controllers/ticketController');
 
-// Configure file upload
+// Configure multer for file uploads
 const storage = multer.diskStorage({
-    destination: path.join(__dirname, '../uploads'),
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-  });
-  const upload = multer({ storage });
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../uploads'));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
 
-  router.post('/upload-ticket', upload.single('ticket'), ticketController.extractTicketData);
+// File filter for multer
+const fileFilter = (req, file, cb) => {
+  // Allow only PDF files
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
+router.post('/upload-ticket', upload.single('ticket'), ticketController.extractTicketData);
 router.post("/upload", upload.single("invoice"), invoiceController.uploadInvoice);
 router.post('/sendInvoiceEmail', invoiceController.sendInvoiceEmail);
 router.post('/saveInvoiceDetails', invoiceController.saveInvoiceDetails);
