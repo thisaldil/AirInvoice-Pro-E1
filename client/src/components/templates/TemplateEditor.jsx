@@ -247,32 +247,38 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               >
                 <h3
                   className="font-medium mb-4"
-                  style={{ color: accentColor, }}
+                  style={{ color: accentColor }}
                 >
                   Flight Details
                 </h3>
                 {invoiceData?.flightDetails?.map((flight, i) => (
-                  <div key={i} className="bg-gray-50 p-4 rounded-md">
+                  <div key={i} className="bg-gray-50 p-4 rounded-md mb-4">
                     <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">Flight #{i + 1}</h4>
+                      <h4 className="font-medium text-gray-800">
+                        {flight.flightNumber || `Flight #${i + 1}`}
+                      </h4>
                       <span className="text-sm font-medium" style={{ color: accentColor }}>
-                        {flight.flightNumber}
+                        {flight.class}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">From</p>
                         <p className="font-medium">{flight.from}</p>
-                        <p className="text-sm">{flight.departureDate} {flight.departureTime}</p>
+                        <p className="text-sm text-gray-600">
+                          {flight.departureDate} at {flight.departureTime}
+                        </p>
                       </div>
-                      <div className="text-right">
+                      <div>
                         <p className="text-sm text-gray-500">To</p>
                         <p className="font-medium">{flight.to}</p>
-                        <p className="text-sm">{flight.arrivalDate} {flight.arrivalTime}</p>
+                        <p className="text-sm text-gray-600">
+                          {flight.arrivalDate} at {flight.arrivalTime}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Seat: {flight.seatNumber} | Class: {flight.class} | Baggage: {flight.baggageAllowance}
+                    <div className="mt-2 text-sm text-gray-500">
+                      Airline: {flight.airline || "-"} | Terminal: {flight.departureTerminal || "-"}
                     </div>
                   </div>
                 ))}
@@ -284,18 +290,25 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               >
                 <h3
                   className="font-medium mb-4"
-                  style={{ color: accentColor, }}
+                  style={{ color: accentColor }}
                 >
                   Pricing Details
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Total Amount</span>
-                    <span>{invoiceData?.totalAmount || "--"}</span>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Amount</span>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-2">{invoiceData?.currency || 'USD'}</span>
+                      <span className="font-medium">{invoiceData?.totalAmount || "--"}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Transaction ID</span>
-                    <span>{invoiceData?.transactionId || "--"}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Payment Method</span>
+                    <span className="font-medium">{invoiceData?.paymentMethod || "--"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Transaction ID</span>
+                    <span className="font-medium">{invoiceData?.transactionId || "--"}</span>
                   </div>
                 </div>
               </div>

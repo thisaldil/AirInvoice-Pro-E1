@@ -245,11 +245,6 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
               {invoice.totalAmount && (isNaN(invoice.totalAmount) || parseFloat(invoice.totalAmount) <= 0) && (
                 <p className="text-red-500 text-sm mt-1">Amount must be a number greater than 0</p>
               )}
-              {invoice.currency && invoice.totalAmount && invoice.currency !== 'USD' && (
-                <p className="text-sm text-gray-500 mt-1">
-                  ≈ {(parseFloat(invoice.totalAmount) / exchangeRates[invoice.currency]).toFixed(2)} USD
-                </p>
-              )}
             </div>
           </div>
         </div>
