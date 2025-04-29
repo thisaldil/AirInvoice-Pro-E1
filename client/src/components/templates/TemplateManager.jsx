@@ -25,22 +25,26 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
 
   const handleSetDefault = async (templateId) => {
     try {
-      const currentDefault = templates.find((t) => t.isDefault && t._id !== templateId);
-      if (currentDefault) {
-        await axios.put(`http://localhost:5000/template/updateTemplate/${currentDefault._id}`, {
-          isDefault: false,
-        });
-      }
-      await axios.put(`http://localhost:5000/template/updateTemplate/${templateId}`, {
-        isDefault: true,
-      });
-      const res = await axios.get("http://localhost:5000/template/getTemplates");
-      setTemplates(res.data);
+      const updatedTemplates = templates.map((template) =>
+        template._id === templateId
+          ? { ...template, isDefault: true }
+          : { ...template, isDefault: false }
+      );
+  
+      await Promise.all(
+        updatedTemplates.map((template) =>
+          axios.put(`http://localhost:5000/template/updateTemplate/${template._id}`, {
+            isDefault: template.isDefault,
+          })
+        )
+      );
+  
+      setTemplates(updatedTemplates);
       setSelectedTemplateId(templateId);
     } catch (err) {
       console.error("Failed to update default template:", err);
     }
-  };
+  };  
 
   const handleDeleteTemplate = async (templateId) => {
     if (window.confirm("Are you sure you want to delete this template?")) {
