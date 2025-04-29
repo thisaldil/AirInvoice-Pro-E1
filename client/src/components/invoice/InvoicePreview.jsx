@@ -16,7 +16,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
 
   useEffect(() => {
     // Check if all required fields have values
-    const hasRequiredFields = 
+    const hasRequiredFields =
       invoice.passportNumber?.trim() &&
       invoice.nationality?.trim() &&
       invoice.dob?.trim() &&
@@ -24,7 +24,8 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
       invoice.totalAmount?.toString().trim();
 
     // Check if we have flight details
-    const hasFlightDetails = Array.isArray(invoice.flightDetails) && invoice.flightDetails.length > 0;
+    const hasFlightDetails =
+      Array.isArray(invoice.flightDetails) && invoice.flightDetails.length > 0;
 
     // Set valid if both conditions are met
     setIsValid(hasRequiredFields && hasFlightDetails);
@@ -38,15 +39,15 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6 dark:text-white">
         Review Extracted Data
       </h1>
-      <p className="text-gray-600 mb-8">
+      <p className="text-gray-600 mb-8 dark:text-white">
         We've extracted the following information from the air ticket invoice.
         Please review and make any necessary corrections.
       </p>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8 ">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">
           Ticket Information
         </h2>
