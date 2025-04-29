@@ -3,14 +3,29 @@ import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
   const [countries, setCountries] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [exchangeRates, setExchangeRates] = useState({});
   const [isValid, setIsValid] = useState(false);
 
   useEffect(() => {
+    // Fetch countries
     fetch("https://restcountries.com/v3.1/all")
       .then((res) => res.json())
       .then((data) => {
         const countryList = data.map((c) => c.name.common).sort();
         setCountries(countryList);
+      });
+
+    // Fetch currencies and exchange rates
+    fetch("https://open.er-api.com/v6/latest/USD")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.result === "success") {
+          setExchangeRates(data.rates);
+          // Create currency list from rates
+          const currencyList = Object.keys(data.rates).sort();
+          setCurrencies(currencyList);
+        }
       });
   }, []);
 
@@ -21,7 +36,11 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
       invoice.nationality?.trim() &&
       invoice.dob?.trim() &&
       invoice.gender?.trim() &&
-      invoice.totalAmount?.toString().trim();
+      invoice.currency?.trim() &&
+      invoice.paymentMethod?.trim() &&
+      invoice.totalAmount?.toString().trim() &&
+      !isNaN(invoice.totalAmount) &&
+      parseFloat(invoice.totalAmount) > 0;
 
     // Check if we have flight details
     const hasFlightDetails = Array.isArray(invoice.flightDetails) && invoice.flightDetails.length > 0;
@@ -33,6 +52,13 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
   const handleFieldEdit = (field, value) => {
     if (onEdit) {
       onEdit(field, value);
+    }
+  };
+
+  const handleAmountChange = (value) => {
+    // Validate that the value is a number and greater than 0
+    if (value === '' || (!isNaN(value) && parseFloat(value) > 0)) {
+      handleFieldEdit('totalAmount', value);
     }
   };
 
@@ -56,19 +82,16 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
               label="Booking Reference"
               value={invoice.bookingReference}
               readOnly
-              placeholder="e.g., 621368349"
             />
             <Field
               label="Passenger Name"
               value={invoice.passengerName}
               readOnly
-              placeholder="e.g., P KOCHCHIKKAN/A JAYANATH MR"
             />
             <Field
               label="Ticket Number"
               value={invoice.transactionId}
               readOnly
-              placeholder="e.g., 5142372016237"
             />
             <Field
               label="Passport Number"
@@ -79,7 +102,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
             />
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">
-                Nationality
+                Nationality <span className="text-red-500">*</span>
               </label>
               <select
                 value={invoice.nationality || ""}
@@ -97,7 +120,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">
-                Date of Birth
+                Date of Birth <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -110,7 +133,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">
-                Gender
+                Gender <span className="text-red-500">*</span>
               </label>
               <select
                 value={invoice.gender || ""}
@@ -161,10 +184,6 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
                     Airline: {flight.airline || "-"} | Terminal:{" "}
                     {flight.departureTerminal || "-"}
                   </div>
-                  {/* <div className="text-sm text-gray-500">
-                    Seat: {flight.seatNumber || "-"} | Baggage:{" "}
-                    {flight.baggageAllowance || "-"}
-                  </div> */}
                 </div>
               ))
             ) : (
@@ -173,13 +192,60 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Field
-              label="Total Amount"
-              value={invoice.totalAmount}
-              required
-              placeholder="e.g., 45000.00"
-              onEdit={(val) => handleFieldEdit("totalAmount", val)}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Currency <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={invoice.currency || ""}
+                  onChange={(e) => handleFieldEdit("currency", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select Currency</option>
+                  {currencies.map((code) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Payment Method <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={invoice.paymentMethod || ""}
+                  onChange={(e) => handleFieldEdit("paymentMethod", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select Payment Method</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-500 mb-1">
+                Total Amount <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center">
+                <span className="mr-2 text-gray-500 font-bold">{invoice.currency}</span>
+                <input
+                  type="text"
+                  value={invoice.totalAmount || ""}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  placeholder="e.g., 45000.00"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              {invoice.totalAmount && (isNaN(invoice.totalAmount) || parseFloat(invoice.totalAmount) <= 0) && (
+                <p className="text-red-500 text-sm mt-1">Amount must be a number greater than 0</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -212,7 +278,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
 const Field = ({ label, value, onEdit, readOnly, placeholder, required }) => (
   <div>
     <label className="block text-sm font-medium text-gray-500 mb-1">
-      {label}
+      {label} {required && <span className="text-red-500">*</span>}
     </label>
     <input
       type="text"

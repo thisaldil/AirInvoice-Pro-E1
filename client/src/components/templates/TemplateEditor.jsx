@@ -5,6 +5,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import html2pdf from "html2pdf.js";
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
@@ -69,22 +70,66 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
     try {
       if (invoiceData) {
-        const canvas = await html2canvas(previewRef.current);
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "pt", "a4");
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        const content = previewRef.current;
+        const bookingRef = invoiceData.bookingReference || 'DRAFT';
+        const currentDate = new Date().toISOString().split('T')[0];
+        const fileName = `${bookingRef}-invoice-${currentDate}`;
 
-        const pdfBlob = pdf.output("blob");
+        const opt = {
+          margin: [0.2, 0.2, 0.2, 0.2],
+          filename: `${fileName}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: {
+            unit: 'in',
+            format: 'a4',
+            orientation: 'portrait',
+            putOnlyUsedFonts: true
+          },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        const worker = html2pdf()
+          .set(opt)
+          .from(content);
+
+        const pdfBlob = await worker.toPdf().get('pdf').then((pdf) => {
+          const pageCount = pdf.internal.getNumberOfPages();
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+
+          for (let i = 1; i <= pageCount; i++) {
+            pdf.setPage(i);
+
+            const yPosition = pageHeight - 10; 
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+
+            // Page number - bottom right
+            pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 50, yPosition);
+
+            // Footer text - bottom center
+            pdf.text("Powered by Air Invoice Pro", pageWidth / 2, yPosition, { align: 'center' });
+
+          }
+
+          return pdf.output('blob');
+        });
+
         const formData = new FormData();
-        formData.append("file", pdfBlob);
+        formData.append("file", pdfBlob, `${fileName}.pdf`);
         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+        formData.append("resource_type", "raw");
 
         const cloudinaryRes = await axios.post(
-          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
-          formData
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
         );
 
         const cloudinaryUrl = cloudinaryRes.data.secure_url;
@@ -110,6 +155,8 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           priceDetails: {
             totalAmount: invoiceData.totalAmount,
             transactionId: invoiceData.transactionId,
+            currency: invoiceData.currency,
+            paymentMethod: invoiceData.paymentMethod
           },
         });
 
@@ -182,9 +229,9 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           <div className="p-6 bg-gray-50 border-b">
             <h2 className="font-medium text-gray-800">Preview</h2>
           </div>
-          <div className="p-8" ref={previewRef} >
+          <div className="p-8 overflow-auto max-h-[800px]" ref={previewRef}>
             {/* Invoice Template Preview */}
-            <div className="border rounded-md overflow-hidden">
+            <div className="border rounded-md overflow-visible">
               {/* Header */}
               <div
                 className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""}`}
@@ -247,32 +294,38 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               >
                 <h3
                   className="font-medium mb-4"
-                  style={{ color: accentColor, }}
+                  style={{ color: accentColor }}
                 >
                   Flight Details
                 </h3>
                 {invoiceData?.flightDetails?.map((flight, i) => (
-                  <div key={i} className="bg-gray-50 p-4 rounded-md">
+                  <div key={i} className="bg-gray-50 p-4 rounded-md mb-4">
                     <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-medium">Flight #{i + 1}</h4>
+                      <h4 className="font-medium text-gray-800">
+                        {flight.flightNumber || `Flight #${i + 1}`}
+                      </h4>
                       <span className="text-sm font-medium" style={{ color: accentColor }}>
-                        {flight.flightNumber}
+                        {flight.class}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">From</p>
                         <p className="font-medium">{flight.from}</p>
-                        <p className="text-sm">{flight.departureDate} {flight.departureTime}</p>
+                        <p className="text-sm text-gray-600">
+                          {flight.departureDate} at {flight.departureTime}
+                        </p>
                       </div>
-                      <div className="text-right">
+                      <div>
                         <p className="text-sm text-gray-500">To</p>
                         <p className="font-medium">{flight.to}</p>
-                        <p className="text-sm">{flight.arrivalDate} {flight.arrivalTime}</p>
+                        <p className="text-sm text-gray-600">
+                          {flight.arrivalDate} at {flight.arrivalTime}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Seat: {flight.seatNumber} | Class: {flight.class} | Baggage: {flight.baggageAllowance}
+                    <div className="mt-2 text-sm text-gray-500">
+                      Airline: {flight.airline || "-"} | Terminal: {flight.departureTerminal || "-"}
                     </div>
                   </div>
                 ))}
@@ -284,18 +337,25 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               >
                 <h3
                   className="font-medium mb-4"
-                  style={{ color: accentColor, }}
+                  style={{ color: accentColor }}
                 >
                   Pricing Details
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Total Amount</span>
-                    <span>{invoiceData?.totalAmount || "--"}</span>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total Amount</span>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-2">{invoiceData?.currency || 'USD'}</span>
+                      <span className="font-medium">{invoiceData?.totalAmount || "--"}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Transaction ID</span>
-                    <span>{invoiceData?.transactionId || "--"}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Payment Method</span>
+                    <span className="font-medium">{invoiceData?.paymentMethod || "--"}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Transaction ID</span>
+                    <span className="font-medium">{invoiceData?.transactionId || "--"}</span>
                   </div>
                 </div>
               </div>
