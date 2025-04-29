@@ -69,9 +69,14 @@ function SendOptions({ invoice, onBack }) {
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
 
+      // Create meaningful filename with booking reference and date
+      const bookingRef = invoiceData?.bookingReference || 'DRAFT';
+      const currentDate = new Date().toISOString().split('T')[0];
+      const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
+
       const a = document.createElement("a");
       a.href = url;
-      a.download = "invoice.pdf";
+      a.download = fileName;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
