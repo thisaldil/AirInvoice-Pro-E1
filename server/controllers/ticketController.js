@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const { extractTicketText } = require('../services/googleDocAiService');
+const nlp = require('compromise');
 
 //ticket gadget format
 exports.extractTicketData = async (req, res) => {
@@ -113,125 +114,115 @@ exports.extractTicketData = async (req, res) => {
 };
 
 //sabre format
+// sabre format
 async function handleSabreTicket(rawText) {
-  try {
-    // Passenger Extraction
-    const passengerBlock = rawText.match(/ITINERARY PREPARED FOR:\s*((?:.+\n)+?)(?=\b(?:DAY|DATE|FLIGHT)\b)/i);
-    const passengerName = passengerBlock?.[1]
-      ?.split(/\n/)
-      .map(line => line.replace(/\s{2,}/g, ' ').trim())
-      .filter(line => line.length > 0) || [];
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  let bookingReference = '';
+  let email = '';
+  let passengerName = [];
+  let flightDetails = [];
 
-    // Basic Info
-    const bookingRef = rawText.match(/BOOKING REF:\s*(\w+)/i)?.[1] || '';
-    const email = rawText.match(/EMAIL ADDRESS:\s*(\S+)/i)?.[1] || '';
+  // Extract booking reference
+  const bookingRefMatch = rawText.match(/BOOKING REF:\s*([A-Z0-9]+)/i);
+  bookingReference = bookingRefMatch ? bookingRefMatch[1].trim() : '';
 
-    // Flight Processing
-    const flightSegments = [];
-    const lines = rawText.split(/\n/g).map(l => l.trim()).filter(l => l);
-    
-    let currentFlight = null;
-    let currentDate = '';
-    let currentDay = '';
+  // Extract email
+  const emailMatch = rawText.match(/EMAIL ADDRESS:\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+  email = emailMatch ? emailMatch[1].trim() : '';
 
-    for (let i = 0; i < lines.length; i++) {
+  // Extract passenger names
+  const passengerStartIndex = lines.findIndex(line => line.includes('ITINERARY PREPARED FOR:'));
+  if (passengerStartIndex !== -1) {
+    for (let i = passengerStartIndex + 1; i < lines.length; i++) {
       const line = lines[i];
-      
-      // Date/Day Tracking
-      const dayMatch = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\b/i);
-      if (dayMatch) {
-        currentDay = dayMatch[1];
-        currentDate = lines[i+1]?.match(/\d{2}[A-Z]{3}/)?.[0] || currentDate;
-        continue;
+      if (/^(DAY|DATE|FLIGHT|STOP|EQP|CLASS|FLYING TIME|SERVICES)/i.test(line)) break;
+      if (line.match(/[A-Z]+\/[A-Z]+(?:\s+[A-Z]+)?\s*(MR|MS|MRS)/i)) {
+        passengerName.push(line);
       }
+    }
+  }
 
-      // Departure Block
-      if (line.startsWith('DEP')) {
-        currentFlight = {
-          day: currentDay,
-          departureDate: `${currentDate} 2025`,
-          airline: '',
-          from: '',
-          to: '',
-          departureTime: '',
-          arrivalTime: '',
-          flightNumber: '',
-          class: 'ECONOMY',
-          status: 'CONFIRMED',
-          aircraft: '',
-          duration: ''
-        };
+  // Extract flight details
+  const flightPattern = /([A-Z]{3})\s+(\d{4})\s+([A-Z]{3})\s+(\d{4})\s+([A-Z]{2,3}\s*\d+)\s+([A-Z]+)/g;
+  const flightSections = rawText.split(/(MON|TUE|WED|THU|FRI|SAT|SUN)/);
 
-        // Extract departure city and time
-        let depCity = '';
-        while (lines[++i] && !lines[i].startsWith('ARR')) {
-          if (/[A-Z]{3} \d{4}/.test(lines[i])) { // Time pattern
-            currentFlight.departureTime = lines[i].replace(/(\d{2})(\d{2})/, '$1:$2');
-          } else if (/^[A-Z]{2} \d+$/.test(lines[i])) { // Flight number
-            currentFlight.flightNumber = lines[i];
-            currentFlight.airline = getAirlineName(lines[i].split(' ')[0]);
-          } else if (/ECONOMY|BUSINESS/i.test(lines[i])) { // Class
-            currentFlight.class = lines[i].split(' ')[0];
-          } else if (/BOEING|AIRBUS/i.test(lines[i])) { // Aircraft
-            currentFlight.aircraft = lines[i];
-          } else if (/\d+HR \d+MIN/i.test(lines[i])) { // Duration
-            const [hr, min] = lines[i].match(/\d+/g);
-            currentFlight.duration = `${hr.padStart(2, '0')}:${min.padStart(2, '0')}`;
-          } else if (!/DEP|TERMINAL|CONFIRMED/i.test(lines[i])) {
-            depCity = lines[i].replace(/DEP\s+/i, '').trim();
-          }
-        }
-        currentFlight.from = depCity;
+  for (let i = 0; i < flightSections.length; i++) {
+    const section = flightSections[i];
+    const lines = section.split("\n").map(line => line.trim()).filter(Boolean);
 
-        // Arrival Processing
-        if (lines[i]?.startsWith('ARR')) {
-          let arrCity = '';
-          while (lines[++i] && !/\d{4} [A-Z]{3}/.test(lines[i])) {
-            if (/[A-Z]{3} \d{4}/.test(lines[i])) { // Time pattern
-              currentFlight.arrivalTime = lines[i].replace(/(\d{2})(\d{2})/, '$1:$2');
-            } else if (!/ARR|TERMINAL/i.test(lines[i])) {
-              arrCity = lines[i].replace(/ARR\s+/i, '').trim();
-            }
-          }
-          currentFlight.to = arrCity;
+    let flightNumber = '';
+    let from = '';
+    let to = '';
+    let departureTime = '';
+    let arrivalTime = '';
+    let flightClass = 'ECONOMY';
+    let status = 'Confirmed';
+    let duration = '';
+    let services = 'NO MEALS';
+    let airline = '';
 
-          // Handle date crossing
-          if (currentFlight.arrivalTime < currentFlight.departureTime) {
-            const nextDay = new Date(currentFlight.departureDate);
-            nextDay.setDate(nextDay.getDate() + 1);
-            currentFlight.arrivalDate = formatDate(nextDay);
-          }
-        }
-
-        flightSegments.push(currentFlight);
+    // Extract flight number and airline
+    for (const line of lines) {
+      const flightMatch = line.match(/([A-Z]{2})\s*\d+/);
+      if (flightMatch) {
+        flightNumber = flightMatch[0].trim();
+        airline = flightNumber.split(' ')[0];
+        break;
       }
     }
 
-    return {
-      passengerName,
-      bookingReference: bookingRef,
-      transactionId: bookingRef,
-      email,
-      flightDetails: flightSegments
-    };
-  } catch (error) {
-    throw new Error(`Sabre parsing failed: ${error.message}`);
+    // Extract departure and arrival details
+    const timeMatches = lines.filter(line => /^\d{4}$/.test(line));
+    if (timeMatches.length >= 2) {
+      departureTime = formatTime(timeMatches[0]);
+      arrivalTime = formatTime(timeMatches[1]);
+    }
+
+    // Extract airport codes
+    const airportMatches = lines.filter(line => /^[A-Z]{3}$/.test(line));
+    if (airportMatches.length >= 2) {
+      from = airportMatches[0];
+      to = airportMatches[1];
+    }
+
+    // Extract flight duration
+    const durationMatch = section.match(/\d+HR\s+\d+MIN/);
+    if (durationMatch) {
+      duration = durationMatch[0].replace(/\s+/g, ' ');
+    }
+
+    // Check for meal services
+    if (section.includes("MEALS")) {
+      services = "MEALS";
+    }
+
+    // Add to flight details
+    if (flightNumber && from && to && departureTime && arrivalTime) {
+      flightDetails.push({
+        flightNumber: flightNumber,
+        airline: airline,
+        from: from,
+        to: to,
+        departureTime: departureTime,
+        arrivalTime: arrivalTime,
+        class: flightClass,
+        status: status,
+        duration: duration,
+        services: services
+      });
+    }
   }
-}
 
-// Helper functions
-function formatDate(date) {
-  return date.toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  }).toUpperCase().replace(/ /g, '');
-}
-
-function getAirlineName(code) {
-  const airlines = { 
-    EY: 'Etihad Airways',
-    AA: 'American Airlines',
-    DL: 'Delta Air Lines',
-    BA: 'British Airways'
+  return {
+    bookingReference,
+    email,
+    passengerName,
+    flightDetails
   };
-  return airlines[code] || code;
 }
+
+// Helper function to format time
+function formatTime(time) {
+  return time.replace(/(\d{2})(\d{2})/, '$1:$2');
+}
+
