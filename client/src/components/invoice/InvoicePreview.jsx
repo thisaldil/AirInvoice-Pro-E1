@@ -84,16 +84,33 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
               value={invoice.bookingReference}
               readOnly
             />
-            <Field
-              label="Passenger Name"
-              value={invoice.passengerName}
-              readOnly
-            />
-            <Field
-              label="Ticket Number"
-              value={invoice.transactionId}
-              readOnly
-            />
+            {Array.isArray(invoice.passengerName) && invoice.passengerName.length > 1 ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Passenger Name</label>
+                <select
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  value={invoice.passengerName[0]}
+                  readOnly
+                >
+                  {invoice.passengerName.map((name, idx) => (
+                    <option key={idx} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <Field
+                label="Passenger Name"
+                value={Array.isArray(invoice.passengerName) ? invoice.passengerName[0] : invoice.passengerName}
+                readOnly
+              />
+            )}
+            {invoice.transactionId ? (
+              <Field
+                label="Ticket Number"
+                value={invoice.transactionId}
+                readOnly
+              />
+            ) : null}
             <Field
               label="Passport Number"
               value={invoice.passportNumber}
@@ -262,11 +279,10 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
         <button
           onClick={onContinue}
           disabled={!isValid}
-          className={`flex items-center px-6 py-2 rounded-md ${
-            isValid
+          className={`flex items-center px-6 py-2 rounded-md ${isValid
               ? "bg-blue-600 text-white hover:bg-blue-700"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
+            }`}
         >
           Continue
           <ArrowRightIcon className="w-4 h-4 ml-2" />
