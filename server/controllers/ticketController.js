@@ -119,7 +119,7 @@ async function handleSabreTicket(rawText) {
   const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
   let bookingReference = '';
   let email = '';
-  let passengerName = [];
+  let passengerNames = [];
   let flightDetails = [];
 
   // Extract booking reference
@@ -137,78 +137,34 @@ async function handleSabreTicket(rawText) {
       const line = lines[i];
       if (/^(DAY|DATE|FLIGHT|STOP|EQP|CLASS|FLYING TIME|SERVICES)/i.test(line)) break;
       if (line.match(/[A-Z]+\/[A-Z]+(?:\s+[A-Z]+)?\s*(MR|MS|MRS)/i)) {
-        passengerName.push(line);
+        passengerNames.push(line);
       }
     }
   }
 
   // Extract flight details
   const flightPattern = /([A-Z]{3})\s+(\d{4})\s+([A-Z]{3})\s+(\d{4})\s+([A-Z]{2,3}\s*\d+)\s+([A-Z]+)/g;
-  const flightSections = rawText.split(/(MON|TUE|WED|THU|FRI|SAT|SUN)/);
+  const flightSections = rawText.split(/DAY\s+DATE/).slice(1);
 
-  for (let i = 0; i < flightSections.length; i++) {
-    const section = flightSections[i];
-    const lines = section.split("\n").map(line => line.trim()).filter(Boolean);
+  for (const section of flightSections) {
+    let match;
+    while ((match = flightPattern.exec(section)) !== null) {
+      const [_, from, depTime, to, arrTime, flightNumber, travelClass] = match;
+      const status = section.includes("CONFIRMED") ? "Confirmed" : "Unknown";
+      const durationMatch = section.match(/\d+HR\s+\d+MIN/);
+      const duration = durationMatch ? durationMatch[0].replace(/\s+/g, ' ') : '';
 
-    let flightNumber = '';
-    let from = '';
-    let to = '';
-    let departureTime = '';
-    let arrivalTime = '';
-    let flightClass = 'ECONOMY';
-    let status = 'Confirmed';
-    let duration = '';
-    let services = 'NO MEALS';
-    let airline = '';
-
-    // Extract flight number and airline
-    for (const line of lines) {
-      const flightMatch = line.match(/([A-Z]{2})\s*\d+/);
-      if (flightMatch) {
-        flightNumber = flightMatch[0].trim();
-        airline = flightNumber.split(' ')[0];
-        break;
-      }
-    }
-
-    // Extract departure and arrival details
-    const timeMatches = lines.filter(line => /^\d{4}$/.test(line));
-    if (timeMatches.length >= 2) {
-      departureTime = formatTime(timeMatches[0]);
-      arrivalTime = formatTime(timeMatches[1]);
-    }
-
-    // Extract airport codes
-    const airportMatches = lines.filter(line => /^[A-Z]{3}$/.test(line));
-    if (airportMatches.length >= 2) {
-      from = airportMatches[0];
-      to = airportMatches[1];
-    }
-
-    // Extract flight duration
-    const durationMatch = section.match(/\d+HR\s+\d+MIN/);
-    if (durationMatch) {
-      duration = durationMatch[0].replace(/\s+/g, ' ');
-    }
-
-    // Check for meal services
-    if (section.includes("MEALS")) {
-      services = "MEALS";
-    }
-
-    // Add to flight details
-    if (flightNumber && from && to && departureTime && arrivalTime) {
       flightDetails.push({
-        flightNumber: flightNumber,
-        airline: airline,
-        from: from,
-        to: to,
-        departureTime: departureTime,
-        arrivalTime: arrivalTime,
-        class: flightClass,
-        status: status,
+        flightNumber: flightNumber.trim(),
+        airline: flightNumber.split(' ')[0].trim(),
+        from: from.trim(),
+        to: to.trim(),
+        departureTime: formatTime(depTime),
+        arrivalTime: formatTime(arrTime),
+        class: travelClass.trim(),
+        status: status.trim(),
         duration: duration,
-        services: services
+        services: section.includes("MEALS") ? "MEALS" : "NO MEALS"
       });
     }
   }
@@ -216,7 +172,7 @@ async function handleSabreTicket(rawText) {
   return {
     bookingReference,
     email,
-    passengerName,
+    passengerNames,
     flightDetails
   };
 }
