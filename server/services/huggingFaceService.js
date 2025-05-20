@@ -13,8 +13,10 @@ async function extractStructuredData(text) {
   const prompt = `
 Extract the following flight ticket text as structured JSON. 
 Only return valid JSON object with fields:
-- passenger
-- flights: [flightNumber, from, to, departure, arrival, status]
+- bookingReference
+- passengerName
+- transactionId
+- flights: [flightNumber, from, to, departure, arrival, status, terminal, airline, class]
 
 TEXT:
 ${text}
@@ -38,7 +40,7 @@ ${text}
   );
 
   const content = response.data.choices[0].message.content.trim();
-  return JSON.parse(content); // auto-parse the JSON string
+  return JSON.parse(content);
 }
 
 module.exports = { extractTextFromPdf, extractStructuredData };
