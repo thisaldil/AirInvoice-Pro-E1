@@ -3,9 +3,9 @@ import { SaveIcon, XIcon, PlusIcon, LayoutIcon, TypeIcon } from "lucide-react";
 import logo from '../../images/logo-placeholder.jpg';
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import html2pdf from "html2pdf.js";
+import { pdf } from "@react-pdf/renderer";
+import { saveAs } from "file-saver";
+import PdfInvoice from "../PdfInvoice";
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
@@ -70,55 +70,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
     try {
       if (invoiceData) {
-        const content = previewRef.current;
         const bookingRef = invoiceData.bookingReference || 'DRAFT';
         const currentDate = new Date().toISOString().split('T')[0];
-        const fileName = `${bookingRef}-invoice-${currentDate}`;
+        const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
 
-        const opt = {
-          margin: [0.2, 0.2, 0.2, 0.2],
-          filename: `${fileName}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: {
-            unit: 'in',
-            format: 'a4',
-            orientation: 'portrait',
-            putOnlyUsedFonts: true
-          },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+        const blob = await pdf(
+          <PdfInvoice invoiceData={invoiceData} templateData={updatedTemplate} />
+        ).toBlob();
 
-        const worker = html2pdf()
-          .set(opt)
-          .from(content);
-
-        const pdfBlob = await worker.toPdf().get('pdf').then((pdf) => {
-          const pageCount = pdf.internal.getNumberOfPages();
-          const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
-
-          for (let i = 1; i <= pageCount; i++) {
-            pdf.setPage(i);
-
-            const yPosition = pageHeight - 10;
-
-            pdf.setFontSize(10);
-            pdf.setTextColor(100);
-
-            // Page number - bottom right
-            pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 50, yPosition);
-
-            // Footer text - bottom center
-            pdf.text("Powered by Air Invoice Pro", pageWidth / 2, yPosition, { align: 'center' });
-
-          }
-
-          return pdf.output('blob');
-        });
-
+        // Upload to Cloudinary
         const formData = new FormData();
-        formData.append("file", pdfBlob, `${fileName}.pdf`);
+        formData.append("file", blob, fileName);
         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
         formData.append("resource_type", "raw");
 
@@ -226,7 +188,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           <div className="p-6 bg-gray-50 border-b">
             <h2 className="font-medium text-gray-800">Preview</h2>
           </div>
-          <div className="p-8 overflow-auto max-h-[800px]" ref={previewRef}>
+          <div className="p-8 overflow-auto" ref={previewRef}>
             {/* Invoice Template Preview */}
             <div className="border rounded-md overflow-visible">
               {/* Header */}
