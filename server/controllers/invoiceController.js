@@ -52,7 +52,7 @@ exports.uploadInvoice = async (req, res) => {
 exports.saveInvoiceDetails = async (req, res) => {
   const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
-  if (!userId || !pdfUrl || !template?._id || !invoiceDetails || !priceDetails) {
+  if (!userId || !pdfUrl || !template?._id || !invoiceDetails?.passengerName || !invoiceDetails?.passengers || !priceDetails) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -70,10 +70,7 @@ exports.saveInvoiceDetails = async (req, res) => {
       },
       invoiceDetails: {
         passengerName: invoiceDetails.passengerName,
-        passportNumber: invoiceDetails.passportNumber,
-        nationality: invoiceDetails.nationality,
-        dob: invoiceDetails.dob,
-        gender: invoiceDetails.gender,
+        passengers: invoiceDetails.passengers,
       },
       priceDetails: {
         totalAmount: priceDetails.totalAmount,
@@ -187,12 +184,12 @@ exports.sendInvoiceEmail = async (req, res) => {
 //delete template by id
 exports.deleteInvoice = async (req, res) => {
   try {
-      const invoice = await Invoice.findByIdAndDelete(req.params.invoiceId);
-      if (!invoice) {
-          return res.status(404).json({ error: "invoice not found" });
-      }
-      res.status(200).json({ message: "invoice deleted successfully" });
+    const invoice = await Invoice.findByIdAndDelete(req.params.invoiceId);
+    if (!invoice) {
+      return res.status(404).json({ error: "invoice not found" });
+    }
+    res.status(200).json({ message: "invoice deleted successfully" });
   } catch (error) {
-      res.status(500).json({ error: "Failed to delete invoice" });
+    res.status(500).json({ error: "Failed to delete invoice" });
   }
 }

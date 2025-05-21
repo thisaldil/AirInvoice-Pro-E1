@@ -31,11 +31,19 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
 
   useEffect(() => {
     // Check if all required fields have values
+    const allPassengersValid = Array.isArray(invoice.passengerName) &&
+      invoice.passengerName.length > 0 &&
+      invoice.passengers &&
+      invoice.passengers.length === invoice.passengerName.length &&
+      invoice.passengers.every(p =>
+        p.passportNumber?.trim() &&
+        p.nationality?.trim() &&
+        p.dob?.trim() &&
+        p.gender?.trim()
+      );
+
     const hasRequiredFields =
-      invoice.passportNumber?.trim() &&
-      invoice.nationality?.trim() &&
-      invoice.dob?.trim() &&
-      invoice.gender?.trim() &&
+      allPassengersValid &&
       invoice.currency?.trim() &&
       invoice.paymentMethod?.trim() &&
       invoice.totalAmount?.toString().trim() &&
