@@ -143,7 +143,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                       <p className="font-semibold text-gray-800">{name}</p>
                       <p className="text-gray-500 mb-2">
                         <strong>Passport No:</strong>{" "}
-                        {invoice.invoiceDetails.passportNumber?.[idx] || "--"}
+                        {invoice.invoiceDetails.passengers?.[idx]?.passportNumber || "--"}
                       </p>
                       {idx < invoice.invoiceDetails.passengerName.length - 1 && <hr />}
                     </div>
@@ -158,19 +158,17 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                   </>
                 )}
               </div>
-              <div className="flex flex-row justify-between items-center w-full">
-                <p>
-                  <strong>Invoice ID:</strong> {invoice._id}
-                </p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteInvoice(invoice._id);
-                  }}
-                  className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
+              <div className="flex flex-row mt-3 border-t justify-between items-center w-full">
+                <p>Invoice ID: {invoice._id}</p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteInvoice(invoice._id);
+                    }}
+                    className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
               </div>
             </div>
           </div>
