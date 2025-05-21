@@ -66,7 +66,7 @@ exports.saveInvoiceDetails = async (req, res) => {
           name: template.company.name,
           logo: template.company.logo,
           address: template.company.address,
-        }
+        },
       },
       invoiceDetails: {
         passengerName: invoiceDetails.passengerName,
@@ -76,7 +76,7 @@ exports.saveInvoiceDetails = async (req, res) => {
         totalAmount: priceDetails.totalAmount,
         paymentMethod: priceDetails.paymentMethod,
         transactionId: priceDetails.transactionId,
-      }
+      },
     });
 
     await invoice.save();
@@ -192,4 +192,26 @@ exports.deleteInvoice = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to delete invoice" });
   }
-}
+};
+
+exports.getRecentInvoices = async (req, res) => {
+  try {
+    const recentInvoices = await Invoice.find(
+      {},
+      {
+        "invoiceDetails.passengerName": 1,
+        "invoiceDetails.passportNumber": 1,
+        "invoiceDetails.nationality": 1,
+        "priceDetails.totalAmount": 1,
+        createdAt: 1, // include this if you want date
+      }
+    )
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    res.status(200).json(recentInvoices);
+  } catch (err) {
+    console.error("Error fetching recent invoices:", err);
+    res.status(500).json({ error: "Failed to fetch recent invoices" });
+  }
+};

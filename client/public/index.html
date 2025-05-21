@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/logoIcon.png" />
@@ -10,15 +10,21 @@
       content="Web site created using create-react-app"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
-
-    <link
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-      rel="stylesheet"
-    />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- ✅ Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+
     <title>AirInvoice Pro</title>
   </head>
-  <body>
+  <body
+    class="bg-white dark:bg-gray-900 text-black dark:text-white transition-colors"
+  >
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
