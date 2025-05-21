@@ -14,11 +14,13 @@ const invoiceSchema = new Schema({
         },
     },
     invoiceDetails: {
-        passengerName: String,
-        passportNumber: String,
-        nationality: String,
-        dob: String,
-        gender: String,
+        passengerName: [String],
+        passengers: [{
+            passportNumber: String,
+            nationality: String,
+            dob: String,
+            gender: String
+        }]
     },
     priceDetails: {
         totalAmount: String,
