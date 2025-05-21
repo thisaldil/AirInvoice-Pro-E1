@@ -63,7 +63,7 @@ function InvoiceUpload({ onUpload }) {
       const formData = new FormData();
       formData.append("ticket", file);
 
-      const response = await axios.post("http://localhost:5000/invoice/upload-ticket", formData, {
+      const response = await axios.post("http://localhost:5000/ocr/analyze", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
