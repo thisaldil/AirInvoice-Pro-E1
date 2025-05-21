@@ -6,6 +6,8 @@ function Dashboard({ onNavigate }) {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+  const [recentInvoices, setRecentInvoices] = useState([]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -15,8 +17,30 @@ function Dashboard({ onNavigate }) {
 
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
-  }, []);
 
+    // Fetch recent invoices
+    fetch("http://localhost:5000/invoice/recent") // Update with your actual backend URL
+      .then((res) => res.json())
+      .then((data) => {
+        const formatted = data.map((inv) => ({
+          id: inv._id,
+          customer: inv.invoiceDetails?.passengerName || "N/A",
+          passport: inv.invoiceDetails?.passportNumber || "N/A",
+          nationality: inv.invoiceDetails?.nationality || "N/A",
+          amount: inv.priceDetails?.totalAmount
+            ? `$${inv.priceDetails.totalAmount}`
+            : "N/A",
+          date: inv.createdAt
+            ? new Date(inv.createdAt).toLocaleDateString()
+            : "N/A",
+          status: "Sent",
+        }));
+        setRecentInvoices(formatted);
+      })
+      .catch((err) => {
+        console.error("Failed to load recent invoices", err);
+      });
+  }, []);
   const quickActions = [
     {
       id: "upload",
@@ -32,43 +56,23 @@ function Dashboard({ onNavigate }) {
     },
   ];
 
-  const recentInvoices = [
-    {
-      id: 1,
-      customer: "John Smith",
-      date: "2023-06-15",
-      amount: "$450.00",
-      status: "Sent",
-    },
-    {
-      id: 2,
-      customer: "Sarah Johnson",
-      date: "2023-06-14",
-      amount: "$780.00",
-      status: "Draft",
-    },
-    {
-      id: 3,
-      customer: "Michael Brown",
-      date: "2023-06-12",
-      amount: "$1,200.00",
-      status: "Sent",
-    },
-  ];
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+          Dashboard
+        </h1>
         {user && (
-          <div className="flex items-center space-x-3">
-            <span className="text-gray-700 font-medium">{user.name}</span>
+          <div className="flex items-center space-x-3 ">
+            <span className="text-gray-700 font-medium dark:text-white">
+              {user.name}
+            </span>
             <img
               src={user.picture
                 .replace("=s96-c", "")
                 .replace("http://", "https://")}
               alt={user.name}
-              className="w-10 h-10 object-cover rounded-full border border-gray-300"
+              className="w-10 h-10 object-cover rounded-full border border-gray-300 "
             />
           </div>
         )}
@@ -96,30 +100,32 @@ function Dashboard({ onNavigate }) {
           </button>
         ))}
       </div>
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8 dark:bg-gray-700 dark:text-white">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Recent Invoices</h2>
-          <button className="text-blue-500 hover:text-blue-700 text-sm font-medium">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+            Recent Invoices
+          </h2>
+          <button className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
             View All
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+              <tr className="border-b border-gray-200 dark:border-gray-600">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
                   Customer
                 </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
                   Date
                 </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
                   Amount
                 </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
                   Status
                 </th>
-                <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                <th className="py-3 px-4 text-right text-sm font-medium text-gray-500 dark:text-gray-300">
                   Actions
                 </th>
               </tr>
@@ -128,33 +134,33 @@ function Dashboard({ onNavigate }) {
               {recentInvoices.map((invoice) => (
                 <tr
                   key={invoice.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
+                  className="border-b border-gray-100 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  <td className="py-4 px-4 text-sm text-gray-800">
+                  <td className="py-4 px-4 text-sm text-gray-800 dark:text-white">
                     {invoice.customer}
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-600">
+                  <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">
                     {invoice.date}
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-800 font-medium">
+                  <td className="py-4 px-4 text-sm text-gray-800 font-medium dark:text-white">
                     {invoice.amount}
                   </td>
                   <td className="py-4 px-4">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
                         invoice.status === "Sent"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
                       }`}
                     >
                       {invoice.status}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-right">
-                    <button className="text-blue-500 hover:text-blue-700 mr-3">
+                    <button className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
                       <FileTextIcon className="w-4 h-4" />
                     </button>
-                    <button className="text-green-500 hover:text-green-700">
+                    <button className="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300">
                       <SendIcon className="w-4 h-4" />
                     </button>
                   </td>
@@ -164,6 +170,7 @@ function Dashboard({ onNavigate }) {
           </table>
         </div>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
@@ -182,15 +189,22 @@ function Dashboard({ onNavigate }) {
             change: "-2",
           },
         ].map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-md p-6">
-            <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
+          <div
+            key={index}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+          >
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              {stat.label}
+            </p>
             <div className="flex justify-between items-end">
-              <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                {stat.value}
+              </h3>
               <span
                 className={`text-sm ${
                   stat.change.startsWith("+")
-                    ? "text-green-600"
-                    : "text-red-600"
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-red-600 dark:text-red-400"
                 }`}
               >
                 {stat.change}

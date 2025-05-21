@@ -52,7 +52,13 @@ exports.uploadInvoice = async (req, res) => {
 exports.saveInvoiceDetails = async (req, res) => {
   const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
-  if (!userId || !pdfUrl || !template?._id || !invoiceDetails || !priceDetails) {
+  if (
+    !userId ||
+    !pdfUrl ||
+    !template?._id ||
+    !invoiceDetails ||
+    !priceDetails
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -66,7 +72,7 @@ exports.saveInvoiceDetails = async (req, res) => {
           name: template.company.name,
           logo: template.company.logo,
           address: template.company.address,
-        }
+        },
       },
       invoiceDetails: {
         passengerName: invoiceDetails.passengerName,
@@ -79,7 +85,7 @@ exports.saveInvoiceDetails = async (req, res) => {
         totalAmount: priceDetails.totalAmount,
         paymentMethod: priceDetails.paymentMethod,
         transactionId: priceDetails.transactionId,
-      }
+      },
     });
 
     await invoice.save();
@@ -187,12 +193,34 @@ exports.sendInvoiceEmail = async (req, res) => {
 //delete template by id
 exports.deleteInvoice = async (req, res) => {
   try {
-      const invoice = await Invoice.findByIdAndDelete(req.params.invoiceId);
-      if (!invoice) {
-          return res.status(404).json({ error: "invoice not found" });
-      }
-      res.status(200).json({ message: "invoice deleted successfully" });
+    const invoice = await Invoice.findByIdAndDelete(req.params.invoiceId);
+    if (!invoice) {
+      return res.status(404).json({ error: "invoice not found" });
+    }
+    res.status(200).json({ message: "invoice deleted successfully" });
   } catch (error) {
-      res.status(500).json({ error: "Failed to delete invoice" });
+    res.status(500).json({ error: "Failed to delete invoice" });
   }
-}
+};
+
+exports.getRecentInvoices = async (req, res) => {
+  try {
+    const recentInvoices = await Invoice.find(
+      {},
+      {
+        "invoiceDetails.passengerName": 1,
+        "invoiceDetails.passportNumber": 1,
+        "invoiceDetails.nationality": 1,
+        "priceDetails.totalAmount": 1,
+        createdAt: 1, // include this if you want date
+      }
+    )
+      .sort({ createdAt: -1 })
+      .limit(3);
+
+    res.status(200).json(recentInvoices);
+  } catch (err) {
+    console.error("Error fetching recent invoices:", err);
+    res.status(500).json({ error: "Failed to fetch recent invoices" });
+  }
+};
