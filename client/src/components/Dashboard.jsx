@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FileTextIcon, FileUpIcon, SendIcon, BoxIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-function Dashboard({ onNavigate }) {
+function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -41,20 +41,6 @@ function Dashboard({ onNavigate }) {
         console.error("Failed to load recent invoices", err);
       });
   }, []);
-  const quickActions = [
-    {
-      id: "upload",
-      label: "Upload New Invoice",
-      icon: FileUpIcon,
-      color: "bg-blue-500",
-    },
-    {
-      id: "templates",
-      label: "Manage Templates",
-      icon: BoxIcon,
-      color: "bg-purple-500",
-    },
-  ];
 
   return (
     <div>
@@ -78,27 +64,38 @@ function Dashboard({ onNavigate }) {
         )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        {quickActions.map((action) => (
-          <button
-            key={action.id}
-            onClick={() => onNavigate(action.id)}
-            className={`${action.color} text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow`}
-          >
-            <div className="flex items-center">
-              <div className="bg-white bg-opacity-30 p-3 rounded-full">
-                <action.icon className="w-6 h-6" />
-              </div>
-              <div className="ml-4 text-left">
-                <h3 className="text-xl font-semibold">{action.label}</h3>
-                <p className="text-sm text-white text-opacity-90">
-                  {action.id === "upload"
-                    ? "Create a new invoice from airline ticket"
-                    : "Edit or create company templates"}
-                </p>
-              </div>
+        <Link
+          to={`/dashboard/upload`}
+          className='bg-blue-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'
+        >
+          <div className="flex items-center">
+            <div className="bg-white bg-opacity-30 p-3 rounded-full">
+              <FileUpIcon className="w-6 h-6" />
             </div>
-          </button>
-        ))}
+            <div className="ml-4 text-left">
+              <h3 className="text-xl font-semibold">Upload New Invoice</h3>
+              <p className="text-sm text-white text-opacity-90">
+                Create a new invoice from airline ticket
+              </p>
+            </div>
+          </div>
+        </Link>
+        <Link
+          to={`/dashboard/templates`}
+          className='bg-purple-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'
+        >
+          <div className="flex items-center">
+            <div className="bg-white bg-opacity-30 p-3 rounded-full">
+              <BoxIcon className="w-6 h-6" />
+            </div>
+            <div className="ml-4 text-left">
+              <h3 className="text-xl font-semibold">Manage Templates</h3>
+              <p className="text-sm text-white text-opacity-90">
+                Create a new invoice from airline ticket
+              </p>
+            </div>
+          </div>
+        </Link>
       </div>
       <div className="bg-white rounded-lg shadow-md p-6 mb-8 dark:bg-gray-700 dark:text-white">
         <div className="flex justify-between items-center mb-6">
@@ -147,11 +144,10 @@ function Dashboard({ onNavigate }) {
                   </td>
                   <td className="py-4 px-4">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        invoice.status === "Sent"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-                      }`}
+                      className={`px-2 py-1 text-xs rounded-full ${invoice.status === "Sent"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                        }`}
                     >
                       {invoice.status}
                     </span>
@@ -201,11 +197,10 @@ function Dashboard({ onNavigate }) {
                 {stat.value}
               </h3>
               <span
-                className={`text-sm ${
-                  stat.change.startsWith("+")
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}
+                className={`text-sm ${stat.change.startsWith("+")
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+                  }`}
               >
                 {stat.change}
               </span>

@@ -34,11 +34,20 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
       setFilteredInvoices(invoices);
     } else {
       const term = search.toLowerCase();
-      const filtered = invoices.filter(
-        (inv) =>
-          inv?.invoiceDetails?.passengerName?.toLowerCase().includes(term) ||
-          inv?.invoiceDetails?.passportNumber?.toLowerCase().includes(term)
-      );
+      const filtered = invoices.filter((inv) => {
+        const names = inv?.invoiceDetails?.passengerName || [];
+        const passport = inv?.invoiceDetails?.passportNumber;
+
+        const nameMatch = Array.isArray(names)
+          ? names.some((name) => name.toLowerCase().includes(term))
+          : names?.toLowerCase().includes(term);
+
+        const passportMatch = Array.isArray(passport)
+          ? passport.some((p) => p.toLowerCase().includes(term))
+          : passport?.toLowerCase().includes(term);
+
+        return nameMatch || passportMatch;
+      });
       setFilteredInvoices(filtered);
     }
   }, [search, invoices]);
@@ -108,23 +117,13 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             onClick={() => handleClick(invoice)}
             className="cursor-pointer border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
-            <div className="p-4 flex items-center border-b border-gray-200 dark:border-gray-700">
-              {invoice.template?.company?.logo ? (
-                <img
-                  src={invoice.template.company.logo}
-                  alt="logo"
-                  className="w-10 h-10 mr-3 object-contain"
-                />
-              ) : (
-                <div className="w-10 h-10 mr-3 bg-gray-200 dark:bg-gray-600 rounded" />
-              )}
-
+            <div className="p-2 px-4 flex items-center border-b border-gray-200 dark:border-gray-700">
               <div className="flex flex-row justify-between items-center w-full">
                 {invoice.template?.company?.logo ? (
                   <img
                     src={invoice.template.company.logo}
                     alt="logo"
-                    className="w-10 h-10 mr-3 object-contain"
+                    className="w-16 h-16 mr-3 object-contain"
                   />
                 ) : (
                   <div className="w-10 h-10 mr-3 bg-gray-200 dark:bg-gray-600 rounded" />
@@ -137,9 +136,28 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
             </div>
 
             <div className="p-4 text-sm text-gray-500 space-y-1">
-              <p className="text-xl"><strong> {invoice.invoiceDetails.passengerName}</strong></p>
-              <hr />
-              <p><strong>Passport No:</strong> {invoice.invoiceDetails.passportNumber}</p>
+              <div className="space-y-1">
+                {Array.isArray(invoice.invoiceDetails.passengerName) ? (
+                  invoice.invoiceDetails.passengerName.map((name, idx) => (
+                    <div key={idx}>
+                      <p className="font-semibold text-gray-800">{name}</p>
+                      <p className="text-gray-500 mb-2">
+                        <strong>Passport No:</strong>{" "}
+                        {invoice.invoiceDetails.passportNumber?.[idx] || "--"}
+                      </p>
+                      {idx < invoice.invoiceDetails.passengerName.length - 1 && <hr />}
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <p className="font-semibold text-gray-800">{invoice.invoiceDetails.passengerName}</p>
+                    <p className="text-gray-500">
+                      <strong>Passport No:</strong>{" "}
+                      {invoice.invoiceDetails.passportNumber || "--"}
+                    </p>
+                  </>
+                )}
+              </div>
               <div className="flex flex-row justify-between items-center w-full">
                 <p>
                   <strong>Invoice ID:</strong> {invoice._id}
