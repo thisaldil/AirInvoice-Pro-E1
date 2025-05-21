@@ -104,19 +104,20 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
               <h3 className="font-medium text-gray-800">{template.name}</h3>
               <p className="text-sm text-gray-500">{template.description}</p>
               <div className="mt-4 flex justify-between">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSetDefault(template._id);
-                  }}
-                  className={`text-sm ${template.isDefault ? "text-blue-600 cursor-default" : "text-gray-500 hover:text-blue-600"
-                    }`}
-                >
-                  <div className="flex items-center">
-                    <CheckIcon className="w-4 h-4 mr-1" />
-                    Set as Default
-                  </div>
-                </button>
+                {!invoiceData && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSetDefault(template._id);
+                    }}
+                    className={`text-sm ${template.isDefault ? "text-blue-600 cursor-default" : "text-gray-500 hover:text-blue-600"}`}
+                  >
+                    <div className="flex items-center">
+                      <CheckIcon className="w-4 h-4 mr-1" />
+                      Set as Default
+                    </div>
+                  </button>
+                )}
                 {!invoiceData && (
                   <div className="flex space-x-2">
                     <button
