@@ -136,17 +136,10 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
               </div>
             </div>
 
-            <div className="p-4 text-sm text-gray-500 dark:text-gray-300 space-y-1">
-              <p className="text-2xl text-gray-800 dark:text-white">
-                <strong>
-                  {invoice.invoiceDetails?.passengerName || "No Name"}
-                </strong>
-              </p>
-              <p>
-                <strong>Passport No:</strong>{" "}
-                {invoice.invoiceDetails?.passportNumber || "N/A"}
-              </p>
-
+            <div className="p-4 text-sm text-gray-500 space-y-1">
+              <p className="text-xl"><strong> {invoice.invoiceDetails.passengerName}</strong></p>
+              <hr />
+              <p><strong>Passport No:</strong> {invoice.invoiceDetails.passportNumber}</p>
               <div className="flex flex-row justify-between items-center w-full">
                 <p>
                   <strong>Invoice ID:</strong> {invoice._id}

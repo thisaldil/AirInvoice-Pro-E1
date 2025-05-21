@@ -52,13 +52,7 @@ exports.uploadInvoice = async (req, res) => {
 exports.saveInvoiceDetails = async (req, res) => {
   const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
-  if (
-    !userId ||
-    !pdfUrl ||
-    !template?._id ||
-    !invoiceDetails ||
-    !priceDetails
-  ) {
+  if (!userId || !pdfUrl || !template?._id || !invoiceDetails?.passengerName || !invoiceDetails?.passengers || !priceDetails) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -76,10 +70,7 @@ exports.saveInvoiceDetails = async (req, res) => {
       },
       invoiceDetails: {
         passengerName: invoiceDetails.passengerName,
-        passportNumber: invoiceDetails.passportNumber,
-        nationality: invoiceDetails.nationality,
-        dob: invoiceDetails.dob,
-        gender: invoiceDetails.gender,
+        passengers: invoiceDetails.passengers,
       },
       priceDetails: {
         totalAmount: priceDetails.totalAmount,

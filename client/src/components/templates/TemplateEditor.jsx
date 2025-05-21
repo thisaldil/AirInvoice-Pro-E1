@@ -101,7 +101,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           for (let i = 1; i <= pageCount; i++) {
             pdf.setPage(i);
 
-            const yPosition = pageHeight - 10; 
+            const yPosition = pageHeight - 10;
 
             pdf.setFontSize(10);
             pdf.setTextColor(100);
@@ -147,10 +147,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           },
           invoiceDetails: {
             passengerName: invoiceData.passengerName,
-            passportNumber: invoiceData.passportNumber,
-            nationality: invoiceData.nationality,
-            dob: invoiceData.dob,
-            gender: invoiceData.gender,
+            passengers: invoiceData.passengers || [],
           },
           priceDetails: {
             totalAmount: invoiceData.totalAmount,
@@ -278,14 +275,19 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </h3>
                   <div className="whitespace-pre-line">{companyAddress}</div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">To</h3>
-                  <p className="font-medium flex justify-between">{invoiceData?.passengerName || '--'}</p>
-                  <p className="flex justify-between">Passport: {invoiceData?.passportNumber || '--'}</p>
-                  <p className="flex justify-between">Nationality: {invoiceData?.nationality || '--'}</p>
-                  <p className="flex justify-between">DOB: {invoiceData?.dob || '--'}</p>
-                  <p className="flex justify-between">Gender: {invoiceData?.gender || '--'}</p>
-                </div>
+                {Array.isArray(invoiceData?.passengerName) && invoiceData.passengerName.length > 1 ? (
+                  invoiceData.passengerName.map((name, idx) => (
+                    <div key={idx} className="mb-3 border-b pb-2 last:border-none last:pb-0">
+                      <p className="font-medium">{name}</p>
+                      <p className="text-sm text-gray-700">Passport: {invoiceData.passengers?.[idx]?.passportNumber || '--'}</p>
+                      <p className="text-sm text-gray-700">Nationality: {invoiceData.passengers?.[idx]?.nationality || '--'}</p>
+                      <p className="text-sm text-gray-700">DOB: {invoiceData.passengers?.[idx]?.dob || '--'}</p>
+                      <p className="text-sm text-gray-700">Gender: {invoiceData.passengers?.[idx]?.gender || '--'}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No passenger details available.</p>
+                )}
               </div>
               {/* Flight Details */}
               <div
