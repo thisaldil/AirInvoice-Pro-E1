@@ -6,6 +6,8 @@ import {
   Navigate,
   useNavigate,
 } from "react-router-dom";
+import { Toaster } from 'react-hot-toast';
+
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import InvoiceUpload from "./components/invoice/InvoiceUpload.jsx";
@@ -61,6 +63,7 @@ function AppWrapper() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors duration-300">
+      <Toaster position="top-center" />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

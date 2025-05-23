@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PlusIcon, CheckIcon, EditIcon, TrashIcon } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import toast from 'react-hot-toast';
 
 function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
   const [templates, setTemplates] = useState([]);
@@ -30,7 +31,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           ? { ...template, isDefault: true }
           : { ...template, isDefault: false }
       );
-  
+
       await Promise.all(
         updatedTemplates.map((template) =>
           axios.put(`http://localhost:5000/template/updateTemplate/${template._id}`, {
@@ -38,13 +39,13 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           })
         )
       );
-  
+
       setTemplates(updatedTemplates);
       setSelectedTemplateId(templateId);
     } catch (err) {
       console.error("Failed to update default template:", err);
     }
-  };  
+  };
 
   const handleDeleteTemplate = async (templateId) => {
     if (window.confirm("Are you sure you want to delete this template?")) {
@@ -54,8 +55,10 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
         if (selectedTemplateId === templateId) {
           setSelectedTemplateId(null);
         }
+        toast.success("Template deleted.");
       } catch (err) {
         console.error("Failed to delete template:", err);
+        toast.error("Failed to delete template");
       }
     }
   };
@@ -86,8 +89,8 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
             key={template._id}
             onClick={() => setSelectedTemplateId(template._id)}
             className={`relative border rounded-lg overflow-hidden transition-all ${selectedTemplateId === template._id && invoiceData
-                ? "cursor-pointer ring-2 ring-blue-500 border-transparent"
-                : "border-gray-200 hover:border-blue-200"
+              ? "cursor-pointer ring-2 ring-blue-500 border-transparent"
+              : "border-gray-200 hover:border-blue-200"
               }`}
           >
             <div className="relative h-48 bg-gray-100">
