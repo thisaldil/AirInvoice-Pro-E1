@@ -74,6 +74,20 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         const currentDate = new Date().toISOString().split('T')[0];
         const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
 
+        const existingRes = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
+        const existing = existingRes.data.find(inv => inv.invoiceDetails?.bookingReference === bookingRef);
+
+        if (existing) {
+          const confirmed = window.confirm("An invoice with the same booking reference already exists. Do you want to continue anyway?");
+          if (!confirmed) {
+            toast.error("Invoice creation cancelled.");
+            setUploading(false);
+            return;
+          } else {
+            toast("Proceeding despite duplicate booking reference.");
+          }
+        }
+
         const blob = await pdf(
           <PdfInvoice invoiceData={invoiceData} templateData={updatedTemplate} />
         ).toBlob();

@@ -10,6 +10,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
+  const [duplicateRefs, setDuplicateRefs] = useState(new Set());
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -29,6 +30,17 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
 
     fetchInvoices();
   }, [userId]);
+
+  useEffect(() => {
+    const bookingRefCounts = {};
+    invoices.forEach((inv) => {
+      const ref = inv.invoiceDetails?.bookingReference;
+      if (ref) {
+        bookingRefCounts[ref] = (bookingRefCounts[ref] || 0) + 1;
+      }
+    });
+    setDuplicateRefs(new Set(Object.keys(bookingRefCounts).filter(ref => bookingRefCounts[ref] > 1)));
+  }, [invoices]);
 
   useEffect(() => {
     if (search.trim() === "") {
@@ -117,7 +129,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
           <div
             key={invoice._id}
             onClick={() => handleClick(invoice)}
-            className="cursor-pointer border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:border-blue-500 hover:shadow-lg transition"
+            className="relative cursor-pointer border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:border-blue-500 hover:shadow-lg transition"
           >
             <div className="p-2 px-4 flex items-center border-b border-gray-200 dark:border-gray-700">
               <div className="flex flex-row justify-between items-center w-full">
@@ -173,6 +185,12 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                 </button>
               </div>
             </div>
+            {duplicateRefs.has(invoice.invoiceDetails?.bookingReference) && (
+              <div className="absolute bottom-2 right-2 bg-yellow-100 border border-yellow-400 text-yellow-700 text-xs font-medium px-2 py-1 rounded shadow-sm">
+                ⚠ Duplicate booking<br />
+                Ref: {invoice.invoiceDetails?.bookingReference}
+              </div>
+            )}
           </div>
         ))}
 
