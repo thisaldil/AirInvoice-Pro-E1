@@ -4,8 +4,8 @@ import logo from '../../images/logo-placeholder.jpg';
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
-import { saveAs } from "file-saver";
 import PdfInvoice from "../PdfInvoice";
+import toast from 'react-hot-toast';
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
@@ -42,7 +42,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         })
         .catch((err) => {
           console.error("Error loading template:", err);
-          alert("Failed to load template for editing.");
+          toast.error("Failed to load template for editing.");
           navigate("/template-manager");
         });
     }
@@ -127,17 +127,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
       let response;
       if (isEditing) {
         response = await axios.put(`http://localhost:5000/template/updateTemplate/${id}`, updatedTemplate);
-        alert("Template updated successfully!");
+        toast.success("Template updated successfully!");
       } else {
         response = await axios.post("http://localhost:5000/template/createTemplate", updatedTemplate);
-        alert("Template created successfully!");
+        toast.success("Template created successfully!");
       }
 
       onSave?.(response.data);
       navigate("/dashboard/templates");
     } catch (err) {
       console.error("Failed to save template or PDF:", err);
-      alert("Error saving template or uploading PDF. Please try again.");
+      toast.error("Error saving template or uploading PDF. Please try again.");
     } finally {
       setUploading(false);
     }

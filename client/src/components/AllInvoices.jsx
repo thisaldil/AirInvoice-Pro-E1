@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { SearchIcon, TrashIcon } from "lucide-react";
+import toast from 'react-hot-toast';
 
 const AllInvoices = ({ setGeneratedInvoice }) => {
   const [invoices, setInvoices] = useState([]);
@@ -84,9 +85,10 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
         setInvoices((prev) =>
           prev.filter((invoice) => invoice._id !== invoiceId)
         );
+        toast.success("Invoice deleted.");
       } catch (err) {
         console.error("Failed to delete invoice:", err);
-        alert("Failed to delete invoice. Please try again.");
+        toast.error("Failed to delete invoice. Please try again.");
       }
     }
   };
@@ -160,15 +162,15 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
               </div>
               <div className="flex flex-row mt-3 border-t justify-between items-center w-full">
                 <p>Invoice ID: {invoice._id}</p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteInvoice(invoice._id);
-                    }}
-                    className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteInvoice(invoice._id);
+                  }}
+                  className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
