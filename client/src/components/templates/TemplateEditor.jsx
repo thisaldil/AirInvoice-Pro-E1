@@ -108,6 +108,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             }
           },
           invoiceDetails: {
+            bookingReference: bookingRef,
             passengerName: invoiceData.passengerName,
             passengers: invoiceData.passengers || [],
           },
