@@ -72,7 +72,7 @@ function SendOptions({ invoice, onBack }) {
       const url = window.URL.createObjectURL(blob);
 
       // Create meaningful filename with booking reference and date
-      const bookingRef = invoiceData?.bookingReference || 'DRAFT';
+      const bookingRef = invoiceData?.invoiceDetails.bookingReference || 'DRAFT';
       const currentDate = new Date().toISOString().split('T')[0];
       const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
 

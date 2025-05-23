@@ -14,7 +14,7 @@ const PdfInvoice = ({ invoiceData, templateData }) => {
   const design = templateData?.design || {};
   const accentColor = design.accentColor || "#3B82F6";
   const showFooter = design.showFooter !== false;
-  const footerText = design.footerText || "Thank you for your businesssss!";
+  const footerText = design.footerText || "";
 
   return (
     <Document>
@@ -26,7 +26,7 @@ const PdfInvoice = ({ invoiceData, templateData }) => {
               <Image src={company.logo} style={styles.logo} />
             )}
             <Text style={{ ...styles.companyName, color: accentColor }}>
-              {company.name || "Your Company Name"}
+              {company.name || ""}
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -145,7 +145,6 @@ const styles = StyleSheet.create({
   page: {
     padding: 32,
     fontSize: 11,
-    fontFamily: "Helvetica",
     backgroundColor: "#fff",
   },
   header: {

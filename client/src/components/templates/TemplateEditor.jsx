@@ -48,6 +48,19 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     }
   }, [id]);
 
+  const checkDuplicateInvoice = async (userId, bookingRef) => {
+    try {
+      const { data } = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
+      return Array.isArray(data) && data.some(inv => inv?.invoiceDetails?.bookingReference === bookingRef);
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        return false;
+      }
+      console.error("Error checking duplicates:", error);
+      throw new Error("Unable to verify existing invoices");
+    }
+  };
+
   const handleSave = async () => {
     const updatedTemplate = {
       userId,
@@ -74,10 +87,16 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         const currentDate = new Date().toISOString().split('T')[0];
         const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
 
-        const existingRes = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
-        const existing = existingRes.data.find(inv => inv.invoiceDetails?.bookingReference === bookingRef);
+        let duplicateExists = false;
+        try {
+          duplicateExists = await checkDuplicateInvoice(userId, bookingRef);
+        } catch (err) {
+          toast.error(err.message);
+          setUploading(false);
+          return;
+        }
 
-        if (existing) {
+        if (duplicateExists) {
           const confirmed = window.confirm("An invoice with the same booking reference already exists. Do you want to continue anyway?");
           if (!confirmed) {
             toast.error("Invoice creation cancelled.");
