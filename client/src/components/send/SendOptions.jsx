@@ -56,6 +56,7 @@ function SendOptions({ invoice, onBack }) {
       }
       setIsSent(true);
       setTimeout(() => setIsSent(false), 3000);
+      toast.success("Invoice sent successfully!");
     } catch (err) {
       toast.error("Failed to send invoice. Please try again.");
     } finally {
@@ -71,7 +72,7 @@ function SendOptions({ invoice, onBack }) {
       const url = window.URL.createObjectURL(blob);
 
       // Create meaningful filename with booking reference and date
-      const bookingRef = invoiceData?.bookingReference || 'DRAFT';
+      const bookingRef = invoiceData?.invoiceDetails.bookingReference || 'DRAFT';
       const currentDate = new Date().toISOString().split('T')[0];
       const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
 
@@ -80,6 +81,7 @@ function SendOptions({ invoice, onBack }) {
       a.download = fileName;
       a.click();
       window.URL.revokeObjectURL(url);
+      toast.success("PDF downloaded successfully!");
     } catch (err) {
       toast.error("Failed to download PDF");
     } finally {

@@ -48,6 +48,19 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     }
   }, [id]);
 
+  const checkDuplicateInvoice = async (userId, bookingRef) => {
+    try {
+      const { data } = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
+      return Array.isArray(data) && data.some(inv => inv?.invoiceDetails?.bookingReference === bookingRef);
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        return false;
+      }
+      console.error("Error checking duplicates:", error);
+      throw new Error("Unable to verify existing invoices");
+    }
+  };
+
   const handleSave = async () => {
     const updatedTemplate = {
       userId,
@@ -73,6 +86,26 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         const bookingRef = invoiceData.bookingReference || 'DRAFT';
         const currentDate = new Date().toISOString().split('T')[0];
         const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
+
+        let duplicateExists = false;
+        try {
+          duplicateExists = await checkDuplicateInvoice(userId, bookingRef);
+        } catch (err) {
+          toast.error(err.message);
+          setUploading(false);
+          return;
+        }
+
+        if (duplicateExists) {
+          const confirmed = window.confirm("An invoice with the same booking reference already exists. Do you want to continue anyway?");
+          if (!confirmed) {
+            toast.error("Invoice creation cancelled.");
+            setUploading(false);
+            return;
+          } else {
+            toast("Proceeding despite duplicate booking reference.");
+          }
+        }
 
         const blob = await pdf(
           <PdfInvoice invoiceData={invoiceData} templateData={updatedTemplate} />
@@ -108,6 +141,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             }
           },
           invoiceDetails: {
+            bookingReference: bookingRef,
             passengerName: invoiceData.passengerName,
             passengers: invoiceData.passengers || [],
           },
