@@ -7,6 +7,7 @@ import {
   ArrowLeftIcon,
   CheckIcon,
 } from "lucide-react";
+import toast from 'react-hot-toast';
 
 function SendOptions({ invoice, onBack }) {
   const [invoiceData, setInvoiceData] = useState(null);
@@ -56,7 +57,7 @@ function SendOptions({ invoice, onBack }) {
       setIsSent(true);
       setTimeout(() => setIsSent(false), 3000);
     } catch (err) {
-      alert("Failed to send invoice. Please try again.");
+      toast.error("Failed to send invoice. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -80,7 +81,7 @@ function SendOptions({ invoice, onBack }) {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert("Failed to download PDF");
+      toast.error("Failed to download PDF");
     } finally {
       setIsDownloading(false);
     }

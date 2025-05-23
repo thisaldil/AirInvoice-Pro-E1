@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { SearchIcon, TrashIcon } from "lucide-react";
+import toast from 'react-hot-toast';
 
 const AllInvoices = ({ setGeneratedInvoice }) => {
   const [invoices, setInvoices] = useState([]);
@@ -86,7 +87,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
         );
       } catch (err) {
         console.error("Failed to delete invoice:", err);
-        alert("Failed to delete invoice. Please try again.");
+        toast.error("Failed to delete invoice. Please try again.");
       }
     }
   };
