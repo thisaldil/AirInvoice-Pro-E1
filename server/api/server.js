@@ -6,7 +6,10 @@ const connectDB = require("../database");
 const crypto = require("crypto");
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "https://air-invoice-client.vercel.app",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(passport.initialize());
 
