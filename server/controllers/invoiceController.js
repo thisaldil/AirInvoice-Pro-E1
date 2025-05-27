@@ -130,7 +130,7 @@ exports.sendInvoiceEmail = async (req, res) => {
   }
 
   const fileName = `${uuidv4()}.pdf`;
-  const tempPath = path.join(__dirname, "..", "temp", fileName);
+  const tempPath = path.join("/tmp", fileName);
 
   try {
     // Download PDF from Cloudinary
