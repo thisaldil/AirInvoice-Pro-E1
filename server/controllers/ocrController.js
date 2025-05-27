@@ -43,6 +43,6 @@ exports.handleOCR = async (req, res) => {
 
 function splitDateTime(str) {
   if (!str || typeof str !== 'string') return ['', ''];
-  const match = str.match(/(\d{1,2}\s\w{3}\s\d{4})\s+(\d{2}:\d{2})/); // "26 MAR 2025 23:00"
+  const match = str.match(/(\d{1,2}\s\w{3}\s\d{4})\s+(\d{2}:\d{2})/);
   return match ? [match[1], match[2]] : ['', str];
 }
