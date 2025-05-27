@@ -52,7 +52,7 @@ exports.uploadInvoice = async (req, res) => {
 exports.saveInvoiceDetails = async (req, res) => {
   const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
-  if (!userId || !pdfUrl || !template?._id || !invoiceDetails?.passengerName || !invoiceDetails?.passengers || !priceDetails) {
+  if (!userId || !pdfUrl || !template?._id || !invoiceDetails?.bookingReference || !invoiceDetails?.passengerName || !invoiceDetails?.passengers || !priceDetails) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -69,6 +69,7 @@ exports.saveInvoiceDetails = async (req, res) => {
         },
       },
       invoiceDetails: {
+        bookingReference: invoiceDetails.bookingReference,
         passengerName: invoiceDetails.passengerName,
         passengers: invoiceDetails.passengers,
       },
@@ -160,7 +161,25 @@ exports.sendInvoiceEmail = async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email.trim(),
       subject: "Your Invoice from AirInvoice",
-      text: "Hello,\n\nPlease find attached your invoice.\n\nThank you.",
+      html: `
+          <div style="font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #004cc7;">✈️ AirInvoice Pro</h2>
+            <p>Dear Customer,</p>
+            <p>Thank you for choosing AirInvoice Pro.</p>
+            <p>Please find your attached invoice below.</p>
+
+            <div style="margin: 20px 0; padding: 16px; background-color: #f4f8ff; border-left: 4px solid #004cc7;">
+              <strong style="color: #004cc7;">Need Help?</strong><br/>
+              If you have any questions, just reply to this email.
+            </div>
+
+            <p style="font-size: 14px;">Best regards,<br/><strong>The AirInvoice Pro Team</strong></p>
+
+            <hr style="margin-top: 30px;"/>
+            <p style="font-size: 12px; color: #888;">
+              © ${new Date().getFullYear()} AirInvoice Pro. All rights reserved.
+            </p>
+          </div>`,
       attachments: [
         {
           filename: "invoice.pdf",

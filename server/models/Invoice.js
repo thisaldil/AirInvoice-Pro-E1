@@ -15,6 +15,7 @@ const invoiceSchema = new Schema(
       },
     },
     invoiceDetails: {
+        bookingReference: String,
         passengerName: [String],
         passengers: [{
             passportNumber: String,

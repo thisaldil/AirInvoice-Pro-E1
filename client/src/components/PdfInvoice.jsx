@@ -14,7 +14,7 @@ const PdfInvoice = ({ invoiceData, templateData }) => {
   const design = templateData?.design || {};
   const accentColor = design.accentColor || "#3B82F6";
   const showFooter = design.showFooter !== false;
-  const footerText = design.footerText || "Thank you for your businesssss!";
+  const footerText = design.footerText || "";
 
   return (
     <Document>
@@ -26,7 +26,7 @@ const PdfInvoice = ({ invoiceData, templateData }) => {
               <Image src={company.logo} style={styles.logo} />
             )}
             <Text style={{ ...styles.companyName, color: accentColor }}>
-              {company.name || "Your Company Name"}
+              {company.name || ""}
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -145,7 +145,6 @@ const styles = StyleSheet.create({
   page: {
     padding: 32,
     fontSize: 11,
-    fontFamily: "Helvetica",
     backgroundColor: "#fff",
   },
   header: {
@@ -169,7 +168,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "medium",
   },
   headerRight: {
     alignItems: "flex-end",
@@ -177,7 +176,7 @@ const styles = StyleSheet.create({
   },
   invoiceTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "medium",
     marginBottom: 4,
   },
   bookingRef: {
@@ -214,7 +213,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   passengerName: {
-    fontWeight: "bold",
+    fontWeight: "medium",
     fontSize: 11,
     marginBottom: 2,
   },
@@ -228,7 +227,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   sectionTitle: {
-    fontWeight: "bold",
+    fontWeight: "medium",
     fontSize: 13,
     marginBottom: 8,
   },
@@ -244,12 +243,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   flightNumber: {
-    fontWeight: "bold",
+    fontWeight: "medium",
     fontSize: 12,
   },
   flightClass: {
     fontSize: 11,
-    fontWeight: "bold",
+    fontWeight: "medium",
   },
   flightInfoRow: {
     flexDirection: "row",
@@ -265,7 +264,7 @@ const styles = StyleSheet.create({
   },
   flightValue: {
     fontSize: 11,
-    fontWeight: "bold",
+    fontWeight: "medium",
   },
   flightDate: {
     fontSize: 10,
@@ -286,7 +285,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   pricingValue: {
-    fontWeight: "bold",
+    fontWeight: "medium",
     fontSize: 11,
   },
   footer: {

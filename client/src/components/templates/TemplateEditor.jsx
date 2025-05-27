@@ -48,6 +48,19 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     }
   }, [id]);
 
+  const checkDuplicateInvoice = async (userId, bookingRef) => {
+    try {
+      const { data } = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
+      return Array.isArray(data) && data.some(inv => inv?.invoiceDetails?.bookingReference === bookingRef);
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        return false;
+      }
+      console.error("Error checking duplicates:", error);
+      throw new Error("Unable to verify existing invoices");
+    }
+  };
+
   const handleSave = async () => {
     const updatedTemplate = {
       userId,
@@ -73,6 +86,26 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         const bookingRef = invoiceData.bookingReference || 'DRAFT';
         const currentDate = new Date().toISOString().split('T')[0];
         const fileName = `${bookingRef}-invoice-${currentDate}.pdf`;
+
+        let duplicateExists = false;
+        try {
+          duplicateExists = await checkDuplicateInvoice(userId, bookingRef);
+        } catch (err) {
+          toast.error(err.message);
+          setUploading(false);
+          return;
+        }
+
+        if (duplicateExists) {
+          const confirmed = window.confirm("An invoice with the same booking reference already exists. Do you want to continue anyway?");
+          if (!confirmed) {
+            toast.error("Invoice creation cancelled.");
+            setUploading(false);
+            return;
+          } else {
+            toast("Proceeding despite duplicate booking reference.");
+          }
+        }
 
         const blob = await pdf(
           <PdfInvoice invoiceData={invoiceData} templateData={updatedTemplate} />
@@ -108,6 +141,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             }
           },
           invoiceDetails: {
+            bookingReference: bookingRef,
             passengerName: invoiceData.passengerName,
             passengers: invoiceData.passengers || [],
           },
@@ -155,6 +189,14 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     }
   };
 
+  const sectionRefs = {
+    header: useRef(null),
+    info: useRef(null),
+    flights: useRef(null),
+    pricing: useRef(null),
+    footer: useRef(null),
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -193,6 +235,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             <div className="border rounded-md overflow-visible">
               {/* Header */}
               <div
+                ref={sectionRefs.header}
                 className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("header")}
               >
@@ -228,6 +271,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Company & Client Info */}
               <div
+                ref={sectionRefs.info}
                 className={`p-6 grid grid-cols-2 gap-6 border-b ${selectedSection === "info" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("info")}
               >
@@ -237,7 +281,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </h3>
                   <div className="whitespace-pre-line">{companyAddress}</div>
                 </div>
-                {Array.isArray(invoiceData?.passengerName) && invoiceData.passengerName.length > 1 ? (
+                {Array.isArray(invoiceData?.passengerName) && invoiceData.passengerName.length > 0 ? (
                   invoiceData.passengerName.map((name, idx) => (
                     <div key={idx} className="mb-3 border-b pb-2 last:border-none last:pb-0">
                       <p className="font-medium">{name}</p>
@@ -253,6 +297,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Flight Details */}
               <div
+                ref={sectionRefs.flights}
                 className={`p-6 border-b ${selectedSection === "flights" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("flights")}
               >
@@ -296,6 +341,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Pricing */}
               <div
+                ref={sectionRefs.pricing}
                 className={`p-6 border-b ${selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("pricing")}
               >
@@ -326,6 +372,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               {/* Footer */}
               {showFooter && (
                 <div
+                  ref={sectionRefs.footer}
                   className={`p-6 text-center ${selectedSection === "footer" ? "ring-2 ring-blue-500" : ""}`}
                   onClick={() => setSelectedSection("footer")}
                   style={{ backgroundColor: accentColor + "10", }}
@@ -477,7 +524,11 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                 ].map((section) => (
                   <button
                     key={section.id}
-                    onClick={() => setSelectedSection(section.id)}
+                    onClick={() => {
+                      setSelectedSection(section.id)
+                      sectionRefs[section.id]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+                    }}
                     className={`flex items-center w-full p-2 rounded-md text-left ${selectedSection === section.id
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-700 hover:bg-gray-50"
