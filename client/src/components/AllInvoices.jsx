@@ -143,13 +143,24 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                   <div className="w-10 h-10 mr-3 bg-gray-200 dark:bg-gray-600 rounded" />
                 )}
 
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {new Date(invoice.date).toLocaleDateString("en-GB")}
-                </span>
+                <div className="flex flex-row justify-end space-x-4 items-center w-full">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(invoice.date).toLocaleDateString("en-GB")}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteInvoice(invoice._id);
+                    }}
+                    className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="p-4 text-sm text-gray-500 space-y-1">
+            <div className="p-4 text-sm text-gray-500 space-y-1 min-h-48">
               <div className="space-y-1">
                 {Array.isArray(invoice.invoiceDetails.passengerName) ? (
                   invoice.invoiceDetails.passengerName.map((name, idx) => (
@@ -172,17 +183,9 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
                   </>
                 )}
               </div>
-              <div className="flex flex-row mt-3 border-t justify-between items-center w-full">
+              <div className="mt-3 border-t justify-between items-center w-full">
                 <p>Invoice ID: {invoice._id}</p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteInvoice(invoice._id);
-                  }}
-                  className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
+
               </div>
             </div>
             {duplicateRefs.has(invoice.invoiceDetails?.bookingReference) && (
