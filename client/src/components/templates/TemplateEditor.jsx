@@ -189,6 +189,14 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     }
   };
 
+  const sectionRefs = {
+    header: useRef(null),
+    info: useRef(null),
+    flights: useRef(null),
+    pricing: useRef(null),
+    footer: useRef(null),
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -227,6 +235,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             <div className="border rounded-md overflow-visible">
               {/* Header */}
               <div
+                ref={sectionRefs.header}
                 className={`p-6 border-b flex justify-between items-start ${selectedSection === "header" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("header")}
               >
@@ -262,6 +271,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Company & Client Info */}
               <div
+                ref={sectionRefs.info}
                 className={`p-6 grid grid-cols-2 gap-6 border-b ${selectedSection === "info" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("info")}
               >
@@ -271,7 +281,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                   </h3>
                   <div className="whitespace-pre-line">{companyAddress}</div>
                 </div>
-                {Array.isArray(invoiceData?.passengerName) && invoiceData.passengerName.length > 1 ? (
+                {Array.isArray(invoiceData?.passengerName) && invoiceData.passengerName.length > 0 ? (
                   invoiceData.passengerName.map((name, idx) => (
                     <div key={idx} className="mb-3 border-b pb-2 last:border-none last:pb-0">
                       <p className="font-medium">{name}</p>
@@ -287,6 +297,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Flight Details */}
               <div
+                ref={sectionRefs.flights}
                 className={`p-6 border-b ${selectedSection === "flights" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("flights")}
               >
@@ -330,6 +341,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               </div>
               {/* Pricing */}
               <div
+                ref={sectionRefs.pricing}
                 className={`p-6 border-b ${selectedSection === "pricing" ? "ring-2 ring-blue-500" : ""}`}
                 onClick={() => setSelectedSection("pricing")}
               >
@@ -360,6 +372,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               {/* Footer */}
               {showFooter && (
                 <div
+                  ref={sectionRefs.footer}
                   className={`p-6 text-center ${selectedSection === "footer" ? "ring-2 ring-blue-500" : ""}`}
                   onClick={() => setSelectedSection("footer")}
                   style={{ backgroundColor: accentColor + "10", }}
@@ -511,7 +524,11 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
                 ].map((section) => (
                   <button
                     key={section.id}
-                    onClick={() => setSelectedSection(section.id)}
+                    onClick={() => {
+                      setSelectedSection(section.id)
+                      sectionRefs[section.id]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+                    }}
                     className={`flex items-center w-full p-2 rounded-md text-left ${selectedSection === section.id
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-700 hover:bg-gray-50"
