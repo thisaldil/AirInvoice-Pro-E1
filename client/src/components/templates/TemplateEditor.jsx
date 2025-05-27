@@ -29,7 +29,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   useEffect(() => {
     if (id) {
       setIsEditing(true);
-      axios.get(`http://localhost:5000/template/getTemplateById/${id}`)
+      axios.get(`https://air-invoice-server.vercel.app/template/getTemplateById/${id}`)
         .then((res) => {
           const t = res.data;
           setTemplateName(t.name);
@@ -50,7 +50,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
   const checkDuplicateInvoice = async (userId, bookingRef) => {
     try {
-      const { data } = await axios.get(`http://localhost:5000/invoice/getInvoiceDetailsByUserId/${userId}`);
+      const { data } = await axios.get(`https://air-invoice-server.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`);
       return Array.isArray(data) && data.some(inv => inv?.invoiceDetails?.bookingReference === bookingRef);
     } catch (error) {
       if (error?.response?.status === 404) {
@@ -129,7 +129,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
         const cloudinaryUrl = cloudinaryRes.data.secure_url;
 
-        const saveInvoiceRes = await axios.post("http://localhost:5000/invoice/saveInvoiceDetails", {
+        const saveInvoiceRes = await axios.post("https://air-invoice-server.vercel.app/invoice/saveInvoiceDetails", {
           userId,
           pdfUrl: cloudinaryUrl,
           template: {
@@ -160,10 +160,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:5000/template/updateTemplate/${id}`, updatedTemplate);
+        response = await axios.put(`https://air-invoice-server.vercel.app/template/updateTemplate/${id}`, updatedTemplate);
         toast.success("Template updated successfully!");
       } else {
-        response = await axios.post("http://localhost:5000/template/createTemplate", updatedTemplate);
+        response = await axios.post("https://air-invoice-server.vercel.app/template/createTemplate", updatedTemplate);
         toast.success("Template created successfully!");
       }
 

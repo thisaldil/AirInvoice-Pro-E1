@@ -19,7 +19,7 @@ function Dashboard() {
     setUser(storedUser);
 
     // Fetch recent invoices
-    fetch("http://localhost:5000/invoice/recent")
+    fetch("https://air-invoice-server.vercel.app/invoice/recent")
       .then((res) => res.json())
       .then((data) => {
         const formatted = data.map((inv) => ({
