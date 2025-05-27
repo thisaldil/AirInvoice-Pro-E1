@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/server.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/utils/cronJobs",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
