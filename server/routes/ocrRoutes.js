@@ -1,10 +1,16 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
+const fs = require('fs');
 const { handleOCR } = require('../controllers/ocrController');
 
 const router = express.Router();
-const upload = multer({ dest: path.join(__dirname, '../uploads') });
+const uploadDir = "/tmp/uploads";
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const upload = multer({ dest: uploadDir });
 
 router.post('/analyze', upload.single('ticket'), handleOCR);
 
