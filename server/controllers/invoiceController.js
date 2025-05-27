@@ -21,11 +21,8 @@ exports.uploadInvoice = async (req, res) => {
 
     let fullText = "";
 
-    for (const file of imageFiles) {
-      const imgPath = path.join(outputDir, file);
-      const {
-        data: { text },
-      } = await Tesseract.recognize(imgPath, "eng");
+    for (const imgPath of imageFiles) {
+      const { data: { text } } = await Tesseract.recognize(imgPath, "eng");
       fullText += text + "\n";
     }
 
