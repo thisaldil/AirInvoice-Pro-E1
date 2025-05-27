@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const pdfPoppler = require("pdf-poppler");
+const { fromPath } = require("pdf2pic");
 const Tesseract = require("tesseract.js");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
@@ -15,18 +15,9 @@ exports.uploadInvoice = async (req, res) => {
   try {
     fs.mkdirSync(outputDir);
 
-    const opts = {
-      format: "png",
-      out_dir: outputDir,
-      out_prefix: "page",
-      page: null,
-    };
-
-    await pdfPoppler.convert(filePath, opts);
-
-    const imageFiles = fs
-      .readdirSync(outputDir)
-      .filter((f) => f.endsWith(".png"));
+    const convert = fromPath(filePath, { density: 200, savePath: outputDir });
+    const imagePages = await convert.bulk(-1);
+    const imageFiles = imagePages.map(p => p.path);
 
     let fullText = "";
 
