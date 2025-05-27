@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const PROJECT_ID = '654296127580';
-const LOCATION = 'us'; // or 'eu'
-const PROCESSOR_ID = '9087474c88a70213'; // From Cloud Console
+const LOCATION = 'us';
+const PROCESSOR_ID = '9087474c88a70213';
 
 const client = new DocumentProcessorServiceClient({
   keyFilename: path.join(__dirname, '../key/docai-key.json')
