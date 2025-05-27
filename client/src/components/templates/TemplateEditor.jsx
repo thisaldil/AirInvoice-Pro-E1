@@ -201,10 +201,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Template Editor</h1>
-        <div className="flex space-x-3 items-center">
+        <div className="flex flex-col md:flex-row md:space-x-3 items-center">
           <button
             onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
+            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center mb-2 md:mb-0"
             disabled={uploading}
           >
             <XIcon className="w-4 h-4 mr-2" />
@@ -215,7 +215,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             disabled={uploading}
             className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
-            <SaveIcon className="w-4 h-4 mr-2" />
+            <SaveIcon className="w-8 h-8 md:w-4 md:h-4 mr-2" />
             {uploading
               ? "Loading..."
               : invoiceData

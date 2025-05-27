@@ -50,7 +50,7 @@ function Dashboard() {
         </h1>
         {user && (
           <div className="flex items-center space-x-3 ">
-            <span className="text-gray-700 font-medium dark:text-white">
+            <span className="hidden md:block text-gray-700 font-medium dark:text-white">
               {user.name}
             </span>
             <img

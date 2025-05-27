@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import {
   Users,
@@ -8,6 +8,8 @@ import {
   LogOutIcon,
   BoxIcon,
   FilesIcon,
+  Menu,
+  X,
 } from "lucide-react";
 import logo from "../images/logo.png";
 import darklogo from "../images/drklogo.png";
@@ -15,38 +17,15 @@ import darklogo from "../images/drklogo.png";
 function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const menuItems = [
-    {
-      path: "/dashboard",
-      label: "Dashboard",
-      icon: HomeIcon,
-    },
-    {
-      path: "/dashboard/upload",
-      label: "New Invoice",
-      icon: FileTextIcon,
-    },
-    {
-      path: "/dashboard/templates",
-      label: "Templates",
-      icon: BoxIcon,
-    },
-    {
-      path: "/dashboard/invoices",
-      label: "All Invoices",
-      icon: FilesIcon,
-    },
-    {
-      path: "/dashboard/crm",
-      label: "CRM",
-      icon: Users,
-    },
-    {
-      path: "/dashboard/settings",
-      label: "Settings",
-      icon: SettingsIcon,
-    },
+    { path: "/dashboard", label: "Dashboard", icon: HomeIcon },
+    { path: "/dashboard/upload", label: "New Invoice", icon: FileTextIcon },
+    { path: "/dashboard/templates", label: "Templates", icon: BoxIcon },
+    { path: "/dashboard/invoices", label: "All Invoices", icon: FilesIcon },
+    { path: "/dashboard/crm", label: "CRM", icon: Users },
+    { path: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
   ];
 
   const handleLogout = () => {
@@ -57,18 +36,24 @@ function Layout() {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-gray-800 shadow-md relative">
-        <div className="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          {/* Light logo */}
-          <img src={logo} alt="logo" className="max-w-32 block dark:hidden" />
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow px-4 py-3 flex justify-between items-center">
+        <img src={logo} alt="logo" className="h-6 dark:hidden" />
+        <img src={darklogo} alt="logo" className="h-6 hidden dark:block" />
+        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
 
-          {/* Dark logo */}
-          <img
-            src={darklogo}
-            alt="dark logo"
-            className="max-w-32 hidden dark:block"
-          />
+      {/* Sidebar */}
+      <div
+        className={`fixed pt-10 md:pt-0 md:relative z-40 top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-md transform transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
+      >
+        <div className="hidden md:block p-6 border-b border-gray-200 dark:border-gray-700">
+          <img src={logo} alt="logo" className="max-w-32 block dark:hidden" />
+          <img src={darklogo} alt="dark logo" className="max-w-32 hidden dark:block" />
         </div>
 
         <nav className="mt-6">
@@ -76,7 +61,10 @@ function Layout() {
             {menuItems.map((item) => (
               <li key={item.path}>
                 <button
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    setSidebarOpen(false);
+                  }}
                   className={`flex items-center w-full px-6 py-3 text-left transition-all ${
                     location.pathname === item.path
                       ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-r-4 border-blue-600 dark:border-blue-400"
@@ -102,7 +90,7 @@ function Layout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-8 bg-white dark:bg-gray-900">
+      <div className="flex-1 overflow-auto p-8 pt-20 md:pt-8 bg-white dark:bg-gray-900">
         <Outlet />
       </div>
     </div>
