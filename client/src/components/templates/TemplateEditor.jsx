@@ -103,7 +103,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
             setUploading(false);
             return;
           } else {
-            toast("Proceeding despite duplicate booking reference.");
+            toast.warning("Proceeding despite duplicate booking reference.");
           }
         }
 
