@@ -3,6 +3,7 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const Register = () => {
 
       if (!verify.ok) {
         const msg = await verify.json();
-        alert(msg.message || "Registration failed");
+        toast.error("Registration failed. Please try again.");
         return;
       }
 
@@ -48,6 +49,7 @@ const Register = () => {
       }
     } catch (error) {
       console.error("Google Registration Error:", error);
+      toast.error("Registration failed. Please try again.");
     }
   };
 
@@ -95,7 +97,6 @@ const Register = () => {
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Register</h1>
             <GoogleLogin
               onSuccess={handleSuccess}
-              onError={() => alert("Google Registration Failed")}
             />
             <div className="mt-6 text-sm text-gray-600">
               Already have an account?{" "}
