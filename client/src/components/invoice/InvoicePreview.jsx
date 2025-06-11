@@ -9,7 +9,7 @@ function InvoicePreview({ invoice = {}, onContinue, onBack, onEdit }) {
 
   useEffect(() => {
     // Fetch countries
-    fetch("https://restcountries.com/v3.1/all")
+    fetch("https://restcountries.com/v3.1/all?fields=name")
       .then((res) => res.json())
       .then((data) => {
         const countryList = data.map((c) => c.name.common).sort();
