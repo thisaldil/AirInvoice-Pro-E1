@@ -8,7 +8,7 @@ exports.extractTicketData = async (req, res) => {
   let filePath;
   try {
     const file = req.file;
-    filePath = path.join(__dirname, '../uploads', file.filename);
+    filePath = path.join("/tmp/uploads", req.file.filename);
     const rawText = await extractTicketText(filePath);
 
     // Check if this is a Sabre format ticket by looking for key identifiers

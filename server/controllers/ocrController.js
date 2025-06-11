@@ -4,7 +4,7 @@ const { extractTextFromPdf, extractStructuredData } = require('../services/huggi
 
 exports.handleOCR = async (req, res) => {
   try {
-    const filePath = path.join(__dirname, '../uploads', req.file.filename);
+    const filePath = path.join("/tmp/uploads", req.file.filename);
     const rawText = await extractTextFromPdf(filePath);
     const structured = await extractStructuredData(rawText);
 

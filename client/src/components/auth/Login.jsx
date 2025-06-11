@@ -3,6 +3,7 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Login = () => {
 
   const handleSuccess = async (response) => {
     try {
-      const res = await fetch("http://localhost:5000/auth/google/callback", {
+      const res = await fetch("https://air-invoice-server.vercel.app/auth/google/callback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: response.credential }),
@@ -28,7 +29,7 @@ const Login = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         sessionStorage.clear();
-        alert("Account not registered. Please register first.");
+        toast.info("Account not registered. Please register first.");
         return;
       }
 
@@ -52,6 +53,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login Error:", error);
+      toast.error("Login failed. Please try again.");
     }
   };
 
