@@ -6,25 +6,27 @@ const connectDB = require("../database");
 const crypto = require("crypto");
 
 const app = express();
-app.use(cors({
-  origin: "https://air-invoice-client.vercel.app",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "https://air-invoice-client.vercel.app",
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(passport.initialize());
 
 require("../models/User");
 require("../services/passport");
 
-const authRoutes = require('../routes/authRoutes');
-const userRoutes = require('../routes/userRoutes');
-const templateRoutes = require('../routes/templateRoutes');
+const authRoutes = require("../routes/authRoutes");
+const userRoutes = require("../routes/userRoutes");
+const templateRoutes = require("../routes/templateRoutes");
 const invoiceRoutes = require("../routes/invoiceRoutes");
 const ocrRoutes = require("../routes/ocrRoutes");
 
-app.use('/auth', authRoutes);
-app.use('/user', userRoutes);
-app.use('/template', templateRoutes);
+app.use("/auth", authRoutes);
+app.use("/user", userRoutes);
+app.use("/template", templateRoutes);
 app.use("/invoice", invoiceRoutes);
 app.use("/ocr", ocrRoutes);
 
@@ -46,7 +48,7 @@ app.post("/generate-signature", (req, res) => {
   }
 });
 
-connectDB().catch(err => {
+connectDB().catch((err) => {
   console.error("MongoDB connection error:", err);
 });
 
