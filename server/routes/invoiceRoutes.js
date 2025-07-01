@@ -17,8 +17,8 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
 const fileFilter = (req, file, cb) => {
@@ -33,16 +33,32 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
 });
 
-router.post("/upload-ticket", upload.single("ticket"), ticketController.extractTicketData);
-router.post("/upload", upload.single("invoice"), invoiceController.uploadInvoice);
+router.post(
+  "/upload-ticket",
+  upload.single("ticket"),
+  ticketController.extractTicketData
+);
+router.post(
+  "/upload",
+  upload.single("invoice"),
+  invoiceController.uploadInvoice
+);
 router.post("/sendInvoiceEmail", invoiceController.sendInvoiceEmail);
 router.post("/saveInvoiceDetails", invoiceController.saveInvoiceDetails);
-router.get("/getInvoiceDetailsByUserId/:userId", invoiceController.getInvoiceDetailsByUserId);
-router.get("/getInvoiceDetailsByInvoiceId/:invoiceId", invoiceController.getInvoiceDetailsByInvoiceId);
+router.get(
+  "/getInvoiceDetailsByUserId/:userId",
+  invoiceController.getInvoiceDetailsByUserId
+);
+router.get(
+  "/getInvoiceDetailsByInvoiceId/:invoiceId",
+  invoiceController.getInvoiceDetailsByInvoiceId
+);
 router.delete("/deleteInvoice/:invoiceId", invoiceController.deleteInvoice);
+router.get("/all", invoiceController.getAllInvoices);
+router.get("/recent", invoiceController.getMostRecentInvoices);
 
 module.exports = router;

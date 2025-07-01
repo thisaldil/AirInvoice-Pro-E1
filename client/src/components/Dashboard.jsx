@@ -66,7 +66,7 @@ function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <Link
           to={`/dashboard/upload`}
-          className='bg-blue-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'
+          className="bg-blue-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
         >
           <div className="flex items-center">
             <div className="bg-white bg-opacity-30 p-3 rounded-full">
@@ -82,7 +82,7 @@ function Dashboard() {
         </Link>
         <Link
           to={`/dashboard/templates`}
-          className='bg-purple-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'
+          className="bg-purple-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
         >
           <div className="flex items-center">
             <div className="bg-white bg-opacity-30 p-3 rounded-full">
@@ -144,10 +144,11 @@ function Dashboard() {
                   </td>
                   <td className="py-4 px-4">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${invoice.status === "Sent"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-                        }`}
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        invoice.status === "Sent"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                      }`}
                     >
                       {invoice.status}
                     </span>
@@ -197,10 +198,11 @@ function Dashboard() {
                 {stat.value}
               </h3>
               <span
-                className={`text-sm ${stat.change.startsWith("+")
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-red-600 dark:text-red-400"
-                  }`}
+                className={`text-sm ${
+                  stat.change.startsWith("+")
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-red-600 dark:text-red-400"
+                }`}
               >
                 {stat.change}
               </span>

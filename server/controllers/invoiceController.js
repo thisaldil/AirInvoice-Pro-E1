@@ -17,12 +17,14 @@ exports.uploadInvoice = async (req, res) => {
 
     const convert = fromPath(filePath, { density: 200, savePath: outputDir });
     const imagePages = await convert.bulk(-1);
-    const imageFiles = imagePages.map(p => p.path);
+    const imageFiles = imagePages.map((p) => p.path);
 
     let fullText = "";
 
     for (const imgPath of imageFiles) {
-      const { data: { text } } = await Tesseract.recognize(imgPath, "eng");
+      const {
+        data: { text },
+      } = await Tesseract.recognize(imgPath, "eng");
       fullText += text + "\n";
     }
 
@@ -40,7 +42,15 @@ exports.uploadInvoice = async (req, res) => {
 exports.saveInvoiceDetails = async (req, res) => {
   const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
-  if (!userId || !pdfUrl || !template?._id || !invoiceDetails?.bookingReference || !invoiceDetails?.passengerName || !invoiceDetails?.passengers || !priceDetails) {
+  if (
+    !userId ||
+    !pdfUrl ||
+    !template?._id ||
+    !invoiceDetails?.bookingReference ||
+    !invoiceDetails?.passengerName ||
+    !invoiceDetails?.passengers ||
+    !priceDetails
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -215,6 +225,29 @@ exports.getRecentInvoices = async (req, res) => {
     )
       .sort({ createdAt: -1 })
       .limit(3);
+
+    res.status(200).json(recentInvoices);
+  } catch (err) {
+    console.error("Error fetching recent invoices:", err);
+    res.status(500).json({ error: "Failed to fetch recent invoices" });
+  }
+};
+// get all invoice details
+exports.getAllInvoices = async (req, res) => {
+  try {
+    const allInvoices = await Invoice.find().sort({ createdAt: -1 }); // optional: sort newest first
+    res.status(200).json(allInvoices);
+  } catch (err) {
+    console.error("Error fetching all invoices:", err);
+    res.status(500).json({ error: "Failed to fetch all invoices" });
+  }
+};
+// get most recent 5 invoices
+exports.getMostRecentInvoices = async (req, res) => {
+  try {
+    const recentInvoices = await Invoice.find()
+      .sort({ createdAt: -1 }) // sort newest first
+      .limit(5); // limit to 5 results
 
     res.status(200).json(recentInvoices);
   } catch (err) {
