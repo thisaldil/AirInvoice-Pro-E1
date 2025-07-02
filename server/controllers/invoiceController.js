@@ -232,26 +232,88 @@ exports.getRecentInvoices = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch recent invoices" });
   }
 };
-// get all invoice details
-exports.getAllInvoices = async (req, res) => {
+exports.getRecentInvoices = async (req, res) => {
   try {
-    const allInvoices = await Invoice.find().sort({ createdAt: -1 }); // optional: sort newest first
-    res.status(200).json(allInvoices);
-  } catch (err) {
-    console.error("Error fetching all invoices:", err);
-    res.status(500).json({ error: "Failed to fetch all invoices" });
-  }
-};
-// get most recent 5 invoices
-exports.getMostRecentInvoices = async (req, res) => {
-  try {
-    const recentInvoices = await Invoice.find()
-      .sort({ createdAt: -1 }) // sort newest first
-      .limit(5); // limit to 5 results
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized: No user logged in" });
+    }
+
+    const recentInvoices = await Invoice.find(
+      { userId },
+      {
+        "invoiceDetails.passengerName": 1,
+        "invoiceDetails.passportNumber": 1,
+        "invoiceDetails.nationality": 1,
+        "priceDetails.totalAmount": 1,
+        createdAt: 1,
+      }
+    )
+      .sort({ createdAt: -1 })
+      .limit(3);
 
     res.status(200).json(recentInvoices);
   } catch (err) {
     console.error("Error fetching recent invoices:", err);
     res.status(500).json({ error: "Failed to fetch recent invoices" });
+  }
+};
+
+exports.getMonthlyInvoices = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+
+    const invoices = await Invoice.find({
+      userId,
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+    });
+
+    res.status(200).json(invoices);
+  } catch (err) {
+    console.error("Error fetching monthly invoices:", err);
+    res.status(500).json({ error: "Failed to fetch monthly invoices" });
+  }
+};
+
+exports.getMonthlyRevenue = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+
+    const invoices = await Invoice.find({
+      userId,
+      createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+    });
+
+    const totalRevenue = invoices.reduce((sum, inv) => {
+      return sum + (inv.priceDetails?.totalAmount || 0);
+    }, 0);
+
+    res.status(200).json({ totalRevenue });
+  } catch (err) {
+    console.error("Error calculating monthly revenue:", err);
+    res.status(500).json({ error: "Failed to calculate monthly revenue" });
   }
 };

@@ -8,6 +8,9 @@ function Dashboard() {
 
   const [recentInvoices, setRecentInvoices] = useState([]);
 
+  const [monthlyInvoices, setMonthlyInvoices] = useState([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -18,8 +21,10 @@ function Dashboard() {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
 
-    // Fetch recent invoices
-    fetch("https://air-invoice-server.vercel.app/invoice/recent")
+    // ✅ Fetch recent invoices
+    fetch("https://air-invoice-server.vercel.app/invoice/recent", {
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => {
         const formatted = data.map((inv) => ({
@@ -39,6 +44,30 @@ function Dashboard() {
       })
       .catch((err) => {
         console.error("Failed to load recent invoices", err);
+      });
+
+    // ✅ Fetch this month's invoices
+    fetch("https://air-invoice-server.vercel.app/invoice/month", {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setMonthlyInvoices(data || []);
+      })
+      .catch((err) => {
+        console.error("Failed to load monthly invoices", err);
+      });
+
+    // ✅ Fetch this month's revenue
+    fetch("https://air-invoice-server.vercel.app/invoice/month/revenue", {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setMonthlyRevenue(data.totalRevenue || 0);
+      })
+      .catch((err) => {
+        console.error("Failed to load monthly revenue", err);
       });
   }, []);
 
@@ -172,17 +201,17 @@ function Dashboard() {
         {[
           {
             label: "Invoices This Month",
-            value: "24",
-            change: "+12%",
+            value: `${monthlyInvoices.length}`,
+            change: "+12%", // Optional: Replace with real-time trend data later
           },
           {
-            label: "Total Revenue",
-            value: "$12,450",
-            change: "+8%",
+            label: "This Month Revenue",
+            value: `$${monthlyRevenue}`,
+            change: "+8%", // Optional: Replace with real-time trend data later
           },
           {
             label: "Pending Invoices",
-            value: "3",
+            value: "3", // TODO: Replace with dynamic count if needed
             change: "-2",
           },
         ].map((stat, index) => (
