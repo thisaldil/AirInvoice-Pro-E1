@@ -5,6 +5,7 @@ import {
   HomeIcon,
   FileTextIcon,
   SettingsIcon,
+  PhoneCallIcon,
   LogOutIcon,
   BoxIcon,
   FilesIcon,
@@ -26,6 +27,7 @@ function Layout() {
     { path: "/dashboard/invoices", label: "All Invoices", icon: FilesIcon },
     { path: "/dashboard/crm", label: "CRM", icon: Users },
     { path: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
+    { path: "/dashboard/contact", label: "Contact", icon: PhoneCallIcon },
   ];
 
   const handleLogout = () => {
