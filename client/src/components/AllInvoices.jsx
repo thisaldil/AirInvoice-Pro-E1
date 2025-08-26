@@ -16,7 +16,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
     const fetchInvoices = async () => {
       try {
         const res = await axios.get(
-          `https://air-invoice-server.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`
+          `https://air-invoice-pro-jd9l.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`
         );
         const sortedInvoices = res.data.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
@@ -92,7 +92,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
     if (window.confirm("Are you sure you want to delete this invoice?")) {
       try {
         await axios.delete(
-          `https://air-invoice-server.vercel.app/invoice/deleteInvoice/${invoiceId}`
+          `https://air-invoice-pro-jd9l.vercel.app/invoice/deleteInvoice/${invoiceId}`
         );
         setInvoices((prev) =>
           prev.filter((invoice) => invoice._id !== invoiceId)

@@ -21,7 +21,7 @@ const Register = () => {
     try {
       const token = response.credential;
 
-      const verify = await fetch("https://air-invoice-server.vercel.app/auth/google/register", {
+      const verify = await fetch("https://air-invoice-pro-jd9l.vercel.app/auth/google/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),

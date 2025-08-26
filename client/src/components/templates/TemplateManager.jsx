@@ -14,7 +14,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
     const fetchTemplates = async () => {
       try {
         const res = await axios.get(
-          `https://air-invoice-server.vercel.app/template/getTemplates/${userId}`
+          `https://air-invoice-pro-jd9l.vercel.app/template/getTemplates/${userId}`
         );
         setTemplates(res.data);
         const defaultTemplate = res.data.find((t) => t.isDefault);
@@ -37,7 +37,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
       await Promise.all(
         updatedTemplates.map((template) =>
           axios.put(
-            `https://air-invoice-server.vercel.app/template/updateTemplate/${template._id}`,
+            `https://air-invoice-pro-jd9l.vercel.app/template/updateTemplate/${template._id}`,
             {
               isDefault: template.isDefault,
             }
@@ -56,7 +56,7 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
     if (window.confirm("Are you sure you want to delete this template?")) {
       try {
         await axios.delete(
-          `https://air-invoice-server.vercel.app/template/deleteTemplate/${templateId}`
+          `https://air-invoice-pro-jd9l.vercel.app/template/deleteTemplate/${templateId}`
         );
         setTemplates((prev) =>
           prev.filter((template) => template._id !== templateId)

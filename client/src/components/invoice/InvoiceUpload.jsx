@@ -64,7 +64,7 @@ function InvoiceUpload({ onUpload }) {
       formData.append("ticket", file);
 
       const response = await axios.post(
-        "https://air-invoice-server.vercel.app/ocr/analyze",
+        "https://air-invoice-pro-jd9l.vercel.app/ocr/analyze",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

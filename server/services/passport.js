@@ -8,7 +8,7 @@ require('dotenv').config();
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://air-invoice-server.vercel.app/auth/google/callback",
+    callbackURL: "https://air-invoice-pro-jd9l.vercel.app/auth/google/callback",
     proxy: true
 }, async (accessToken, refreshToken, profile, done) => {
     try {

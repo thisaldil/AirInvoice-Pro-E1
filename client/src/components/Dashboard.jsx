@@ -22,7 +22,7 @@ function Dashboard() {
     setUser(storedUser);
 
     // ✅ Fetch recent invoices
-    fetch("https://air-invoice-server.vercel.app/invoice/recent", {
+    fetch("https://air-invoice-pro-jd9l.vercel.app/invoice/recent", {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -47,7 +47,7 @@ function Dashboard() {
       });
 
     // ✅ Fetch this month's invoices
-    fetch("https://air-invoice-server.vercel.app/invoice/month", {
+    fetch("https://air-invoice-pro-jd9l.vercel.app/invoice/month", {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -59,7 +59,7 @@ function Dashboard() {
       });
 
     // ✅ Fetch this month's revenue
-    fetch("https://air-invoice-server.vercel.app/invoice/month/revenue", {
+    fetch("https://air-invoice-pro-jd9l.vercel.app/invoice/month/revenue", {
       credentials: "include",
     })
       .then((res) => res.json())

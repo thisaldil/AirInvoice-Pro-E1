@@ -24,7 +24,7 @@ function SendOptions({ invoice, onBack }) {
     const fetchInvoice = async () => {
       try {
         const res = await axios.get(
-          `https://air-invoice-server.vercel.app/invoice/getInvoiceDetailsByInvoiceId/${invoice.invoiceId}`
+          `https://air-invoice-pro-jd9l.vercel.app/invoice/getInvoiceDetailsByInvoiceId/${invoice.invoiceId}`
         );
         setInvoiceData(res.data);
       } catch (err) {
@@ -41,7 +41,7 @@ function SendOptions({ invoice, onBack }) {
     setIsSending(true);
     try {
       if (sendMethod === "email") {
-        await axios.post("https://air-invoice-server.vercel.app/invoice/sendInvoiceEmail", {
+        await axios.post("https://air-invoice-pro-jd9l.vercel.app/invoice/sendInvoiceEmail", {
           email,
           pdfUrl: invoiceData?.pdfUrl,
         });
