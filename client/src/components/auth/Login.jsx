@@ -19,11 +19,14 @@ const Login = () => {
 
   const handleSuccess = async (response) => {
     try {
-      const res = await fetch("https://air-invoice-pro-jd9l.vercel.app/auth/google/callback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: response.credential }),
-      });
+      const res = await fetch(
+        "https://air-invoice-pro-jd9l.vercel.app/auth/google/callback",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: response.credential }),
+        }
+      );
 
       if (res.status === 404) {
         localStorage.removeItem("token");
@@ -85,7 +88,7 @@ const Login = () => {
               className="text-xl leading-relaxed font-medium text-center max-w-lg text-gray-700"
             >
               Manage your invoices with ease. Automate, track, and send invoices
-              effortlessly using AirInvoice Pro.
+              effortlessly using AirInvoice Pro.cwedcaedc
             </motion.p>
           </div>
         </div>
