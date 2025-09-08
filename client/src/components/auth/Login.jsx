@@ -88,7 +88,7 @@ const Login = () => {
               className="text-xl leading-relaxed font-medium text-center max-w-lg text-gray-700"
             >
               Manage your invoices with ease. Automate, track, and send invoices
-              effortlessly using AirInvoice Pro.cwedcaedc
+              effortlessly using AirInvoice Pro.
             </motion.p>
           </div>
         </div>
