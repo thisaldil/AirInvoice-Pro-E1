@@ -1,4 +1,4 @@
-# 🚀 [Project Name]
+# 🚀 AirInvoice-Pro
 
 > [One-line description — what it does and who it's for]
 
@@ -336,10 +336,11 @@ root/
 **Thisal Gonsalkorala**  
 Full-Stack Software Engineer
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-Visit-blue?style=flat-square)](YOUR_PORTFOLIO_URL)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](YOUR_LINKEDIN_URL)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat-square&logo=github)](https://github.com/YOUR_USERNAME)
+[![Portfolio](https://img.shields.io/badge/Portfolio-Visit-blue?style=flat-square)](https://profile.thisalg.online/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/thisal-gonsalkorala/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat-square&logo=github)](https://github.com/thisaldil)
 [![Email](https://img.shields.io/badge/Email-Contact-red?style=flat-square&logo=gmail)](mailto:tdimith10@gmail.com)
+
 
 ---
 
