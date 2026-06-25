@@ -1,6 +1,6 @@
 # 🚀 AirInvoice-Pro
 
-> [One-line description — what it does and who it's for]
+> A B2B travel management platform that streamlines air ticket quotations, flight bookings, and invoice generation for travel agencies and corporate clients. The system supports customizable quotation and invoice templates, client-specific requirements, and efficient workflow management to simplify daily travel operations.
 
 ![Project Banner](./screenshots/banner.png)
 <!-- Tip: a 1280x640px screenshot of your app's hero/dashboard works great as a banner -->
