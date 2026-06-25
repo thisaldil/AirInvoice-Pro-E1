@@ -101,7 +101,7 @@ const Login = () => {
             transition={{ duration: 0.6 }}
             className="bg-white p-10 rounded-lg shadow-xl text-center w-full max-w-sm"
           >
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Login</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">Login test</h1>
             <GoogleLogin
               onSuccess={handleSuccess}
               onError={() => console.error("Google Login Failed")}
