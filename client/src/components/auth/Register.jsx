@@ -70,15 +70,20 @@ const Register = ({ onAuth }) => {
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || data.success === false) {
         toast.error(data.message || "Registration failed. Please try again.");
         return;
       }
 
       // Registration now requires OTP verification before login.
       localStorage.setItem("pendingVerifyEmail", email.trim());
+      if (data.devOtp) {
+        localStorage.setItem("pendingVerifyOtp", data.devOtp);
+      } else {
+        localStorage.removeItem("pendingVerifyOtp");
+      }
       toast.success(data.message || "OTP sent to your email");
-      navigate("/otp", { state: { email: email.trim() } });
+      navigate("/otp", { state: { email: email.trim(), devOtp: data.devOtp } });
     } catch (error) {
       console.error("Registration Error:", error);
       toast.error("Registration failed. Please try again.");

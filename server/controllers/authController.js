@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const { publicUserSelect } = require("../middleware/auth.js");
-const UserM = require("../models/userModel.js");
 const { sendOtpEmail } = require("../services/emailService.js");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -13,7 +12,15 @@ const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 const normalizeEmail = (email) => email?.trim().toLowerCase();
 const normalizeUsername = (username) => username?.trim().toLowerCase();
 
-const generateOtp = () => Math.floor(100000 + Math.random() * 900000); // 6-digit
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
+
+const withDevOtp = (payload, emailResult) => {
+    if (process.env.NODE_ENV !== "production" && emailResult?.devOtp) {
+        return { ...payload, devOtp: emailResult.devOtp };
+    }
+
+    return payload;
+};
 
 const toPublicUser = (user) => ({
     _id: user._id,
@@ -87,14 +94,19 @@ const createUser = async (payload) => {
 
 const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        if (handleValidation(req, res)) return;
 
-        if (!name || !email || !password) {
+        const { username, name, email, password } = req.body;
+
+        if (!username || !email || !password) {
             return res.json({ success: false, message: "Missing Details" });
         }
 
         const normalizedEmail = normalizeEmail(email);
-        const existingUser = await UserM.findOne({ email: normalizedEmail });
+        const normalizedUsername = normalizeUsername(username);
+        const existingUser = await User.findOne({
+            $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+        });
 
         if (existingUser) {
             if (existingUser.isAccountVerified) {
@@ -107,22 +119,24 @@ const register = async (req, res) => {
             await existingUser.save();
             const emailResult = await sendOtpEmail(normalizedEmail, otp);
 
-            return res.json({
+            return res.json(withDevOtp({
                 success: true,
                 message: emailResult?.skipped
-                    ? "Account already registered but not verified. Email delivery is unavailable locally; check the server console for the OTP."
+                    ? "Account already registered but not verified. Email delivery is unavailable locally; use the OTP shown on the verification page."
                     : "Account already registered but not verified. A new OTP has been sent.",
                 email: normalizedEmail,
-            });
+            }, emailResult));
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const otp = generateOtp();
 
-        const user = new UserM({
-            name,
+        const user = new User({
+            username: normalizedUsername,
+            name: name?.trim() || username.trim(),
             email: normalizedEmail,
             password: hashedPassword,
+            authProvider: "local",
             verifyotp: otp,
             verifyotpExpireat: Date.now() + OTP_EXPIRY_MS,
             isAccountVerified: false,
@@ -131,13 +145,13 @@ const register = async (req, res) => {
         await user.save();
         const emailResult = await sendOtpEmail(normalizedEmail, otp);
 
-        return res.json({
+        return res.json(withDevOtp({
             success: true,
             message: emailResult?.skipped
-                ? "Registration successful. Email delivery is unavailable locally; check the server console for the OTP."
+                ? "Registration successful. Email delivery is unavailable locally; use the OTP shown on the verification page."
                 : "Registration successful. Please verify the OTP sent to your email.",
             email: normalizedEmail,
-        });
+        }, emailResult));
     } catch (error) {
         console.error("Registration Error:", error);
         if (error.code === 11000) {
@@ -162,7 +176,7 @@ const verifyOtp = async (req, res) => {
         }
 
         const normalizedEmail = normalizeEmail(email);
-        const user = await UserM.findOne({ email: normalizedEmail });
+        const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
             return res.json({ success: false, message: "User not found" });
@@ -224,7 +238,7 @@ const resendOtp = async (req, res) => {
         }
 
         const normalizedEmail = normalizeEmail(email);
-        const user = await UserM.findOne({ email: normalizedEmail });
+        const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
             return res.json({ success: false, message: "User not found" });
@@ -241,12 +255,12 @@ const resendOtp = async (req, res) => {
 
         const emailResult = await sendOtpEmail(normalizedEmail, otp);
 
-        return res.json({
+        return res.json(withDevOtp({
             success: true,
             message: emailResult?.skipped
-                ? "Email delivery is unavailable locally; check the server console for the OTP."
+                ? "Email delivery is unavailable locally; use the OTP shown on the verification page."
                 : "OTP resent successfully",
-        });
+        }, emailResult));
     } catch (error) {
         console.error("Resend OTP Error:", error);
         return res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -255,20 +269,27 @@ const resendOtp = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        if (handleValidation(req, res)) return;
 
-        if (!email || !password) {
+        const { email, usernameOrEmail, password } = req.body;
+        const identifier = usernameOrEmail || email;
+
+        if (!identifier || !password) {
             return res.json({
                 success: false,
-                message: "Email and password are required",
+                message: "Username/email and password are required",
             });
         }
 
-        const normalizedEmail = normalizeEmail(email);
-        const user = await UserM.findOne({ email: normalizedEmail });
+        const user = await User.findOne({
+            $or: [
+                { email: normalizeEmail(identifier) },
+                { username: normalizeUsername(identifier) },
+            ],
+        }).select("+password");
 
         if (!user) {
-            return res.json({ success: false, message: "Invalid email" });
+            return res.json({ success: false, message: "Invalid username/email" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -282,16 +303,16 @@ const login = async (req, res) => {
             user.verifyotp = otp;
             user.verifyotpExpireat = Date.now() + OTP_EXPIRY_MS;
             await user.save();
-            const emailResult = await sendOtpEmail(normalizedEmail, otp);
+            const emailResult = await sendOtpEmail(user.email, otp);
 
-            return res.json({
+            return res.json(withDevOtp({
                 success: false,
                 requiresVerification: true,
-                email: normalizedEmail,
+                email: user.email,
                 message: emailResult?.skipped
-                    ? "Account not verified. Email delivery is unavailable locally; check the server console for the OTP."
+                    ? "Account not verified. Email delivery is unavailable locally; use the OTP shown on the verification page."
                     : "Account not verified. A new OTP has been sent to your email.",
-            });
+            }, emailResult));
         }
 
         const token = jwt.sign(

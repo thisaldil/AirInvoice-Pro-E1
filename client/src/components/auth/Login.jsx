@@ -47,8 +47,15 @@ const Login = ({ onAuth }) => {
       const data = await res.json();
 
       if (data.requiresVerification) {
+        const verifyEmail = data.email || usernameOrEmail.trim();
+        localStorage.setItem("pendingVerifyEmail", verifyEmail);
+        if (data.devOtp) {
+          localStorage.setItem("pendingVerifyOtp", data.devOtp);
+        } else {
+          localStorage.removeItem("pendingVerifyOtp");
+        }
         toast(data.message || "Please verify your email first");
-        navigate("/otp", { state: { email: data.email || usernameOrEmail.trim() } });
+        navigate("/otp", { state: { email: verifyEmail, devOtp: data.devOtp } });
         return;
       }
 

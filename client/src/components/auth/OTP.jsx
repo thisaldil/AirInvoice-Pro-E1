@@ -10,8 +10,10 @@ const OTP = ({ onAuth }) => {
   const location = useLocation();
 
   const emailFromState = location.state?.email || localStorage.getItem("pendingVerifyEmail") || "";
+  const devOtpFromState = location.state?.devOtp || localStorage.getItem("pendingVerifyOtp") || "";
 
   const [email] = useState(emailFromState);
+  const [devOtp, setDevOtp] = useState(devOtpFromState);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -85,6 +87,7 @@ const OTP = ({ onAuth }) => {
       }
 
       localStorage.removeItem("pendingVerifyEmail");
+      localStorage.removeItem("pendingVerifyOtp");
       saveAuthData(data);
       onAuth?.(data.user);
       toast.success("Email verified successfully");
@@ -117,7 +120,15 @@ const OTP = ({ onAuth }) => {
         return;
       }
 
-      toast.success("A new OTP has been sent to your email");
+      if (data.devOtp) {
+        localStorage.setItem("pendingVerifyOtp", data.devOtp);
+        setDevOtp(data.devOtp);
+      } else {
+        localStorage.removeItem("pendingVerifyOtp");
+        setDevOtp("");
+      }
+
+      toast.success(data.devOtp ? "New OTP is shown below" : "A new OTP has been sent to your email");
       setCooldown(30);
     } catch (error) {
       console.error("Resend OTP Error:", error);
@@ -146,6 +157,20 @@ const OTP = ({ onAuth }) => {
         <p className="text-sm text-gray-600 mb-6">
           We sent a 6-digit code to <span className="font-semibold">{email}</span>
         </p>
+
+        {devOtp && (
+          <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-semibold">Development OTP</p>
+            <p className="mt-1 text-2xl font-bold tracking-widest text-gray-900">{devOtp}</p>
+            <button
+              type="button"
+              onClick={() => setOtp(String(devOtp).split(""))}
+              className="mt-2 text-sm font-semibold text-blue-600 hover:underline"
+            >
+              Use this code
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleVerify} className="space-y-6">
           <div className="flex justify-center gap-2" onPaste={handlePaste}>

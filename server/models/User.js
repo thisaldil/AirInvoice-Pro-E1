@@ -3,7 +3,6 @@ const { Schema } = mongoose;
 
 const userSchema = new Schema(
   {
-    googleId: { type: String, unique: true, sparse: true },
     username: {
       type: String,
       trim: true,
@@ -20,6 +19,7 @@ const userSchema = new Schema(
       unique: true,
     },
     password: { type: String, select: false },
+    googleId: { type: String },
     picture: { type: String },
     token: { type: String, select: false },
     authProvider: {
@@ -34,8 +34,22 @@ const userSchema = new Schema(
     },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date },
+    verifyotp: { type: String, default: "" },
+    verifyotpExpireat: { type: Number, default: 0 },
+    isAccountVerified: { type: Boolean, default: false },
+    resetOtp: { type: String, default: "" },
+    resetOtpExpireAt: { type: Number, default: 0 },
   },
   { timestamps: true }
+);
+
+userSchema.index(
+  { googleId: 1 },
+  {
+    name: "googleId_1",
+    unique: true,
+    partialFilterExpression: { googleId: { $type: "string" } },
+  }
 );
 
 module.exports = mongoose.model("User", userSchema);

@@ -2,8 +2,11 @@ const nodemailer = require("nodemailer");
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const getSenderEmail = () =>
-  process.env.SENDER_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER;
+const getSmtpSenderEmail = () =>
+  process.env.SENDER_EMAIL || process.env.SMTP_FROM || process.env.SMTP_USER;
+
+const getGmailSenderEmail = () =>
+  process.env.GMAIL_FROM || process.env.EMAIL_USER;
 
 const createTransportOptions = () => {
   const options = [];
@@ -11,6 +14,7 @@ const createTransportOptions = () => {
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {
     options.push({
       name: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+      from: getSmtpSenderEmail(),
       transport: {
         host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
         port: Number(process.env.SMTP_PORT || 587),
@@ -26,6 +30,7 @@ const createTransportOptions = () => {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     options.push({
       name: "gmail",
+      from: getGmailSenderEmail(),
       transport: {
         service: "gmail",
         auth: {
@@ -48,8 +53,8 @@ const logOtpFallback = (toEmail, otp, reason) => {
   console.warn(`[email] Development OTP for ${toEmail}: ${otp}`);
 };
 
-const buildOtpMail = (toEmail, otp) => ({
-  from: `"AirInvoice Pro" <${getSenderEmail()}>`,
+const buildOtpMail = (toEmail, otp, fromEmail) => ({
+  from: `"AirInvoice Pro" <${fromEmail}>`,
   to: toEmail,
   subject: "Verify your AirInvoice Pro account",
   html: `
@@ -67,16 +72,15 @@ const buildOtpMail = (toEmail, otp) => ({
 const sendOtpEmail = async (toEmail, otp) => {
   if (process.env.EMAIL_DELIVERY_DISABLED === "true") {
     logOtpFallback(toEmail, otp, "Email delivery is disabled");
-    return { skipped: true };
+    return { skipped: true, devOtp: isProduction ? undefined : otp };
   }
 
-  const transportOptions = createTransportOptions();
-  const senderEmail = getSenderEmail();
+  const transportOptions = createTransportOptions().filter((option) => option.from);
 
-  if (!transportOptions.length || !senderEmail) {
+  if (!transportOptions.length) {
     if (!isProduction) {
       logOtpFallback(toEmail, otp, "Email credentials are missing");
-      return { skipped: true };
+      return { skipped: true, devOtp: otp };
     }
 
     throw new Error("Email credentials are missing");
@@ -87,7 +91,7 @@ const sendOtpEmail = async (toEmail, otp) => {
   for (const option of transportOptions) {
     try {
       const transporter = nodemailer.createTransport(option.transport);
-      await transporter.sendMail(buildOtpMail(toEmail, otp));
+      await transporter.sendMail(buildOtpMail(toEmail, otp, option.from));
       return { skipped: false, provider: option.name };
     } catch (error) {
       lastError = error;
@@ -106,7 +110,7 @@ const sendOtpEmail = async (toEmail, otp) => {
       ? "All configured SMTP providers blocked this IP address"
       : lastError?.message || "All configured email providers failed";
     logOtpFallback(toEmail, otp, reason);
-    return { skipped: true };
+    return { skipped: true, devOtp: otp, reason };
   }
 
   if (isUnauthorizedIpError(lastError)) {
