@@ -63,6 +63,16 @@ function AppWrapper() {
 
   useEffect(() => {
     let cancelled = false;
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      clearAuthData();
+      setIsAuthenticated(false);
+      setAuthChecked(true);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     authFetch("/auth/me")
       .then(async (res) => {

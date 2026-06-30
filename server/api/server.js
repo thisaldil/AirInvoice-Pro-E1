@@ -4,24 +4,42 @@ const cors = require("cors");
 const passport = require("passport");
 const session = require("express-session");
 const connectDB = require("../database");
+const cookie=require("cookie-parser")
 const crypto = require("crypto");
 const app = express();
+
+const port=process.env.PORT || 5000
+app.use(cookie())
+app.use(cors({credentials:true}))
+
 const isProduction = process.env.NODE_ENV === "production";
+const allowedOrigins = [
+  "https://air-invoice-client.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+  "http://127.0.0.1:5173",
+  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
 app.set("trust proxy", 1);
-app.use(
-  cors({
-    origin: [
-      "https://air-invoice-client.vercel.app",
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:3001",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(
   session({
@@ -48,6 +66,7 @@ const userRoutes = require("../routes/userRoutes");
 const templateRoutes = require("../routes/templateRoutes");
 const invoiceRoutes = require("../routes/invoiceRoutes");
 const ocrRoutes = require("../routes/ocrRoutes");
+const { log } = require("console");
 
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
@@ -76,5 +95,9 @@ app.post("/generate-signature", (req, res) => {
 connectDB().catch((err) => {
   console.error("MongoDB connection error:", err);
 });
+
+app.listen(port,()=>{
+  console.log("Server Start on "+port)
+})
 
 module.exports = app;

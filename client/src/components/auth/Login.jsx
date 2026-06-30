@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
-import { authFetch, clearAuthData, saveAuthData } from "../../utils/api";
+import { apiUrl, clearAuthData, saveAuthData } from "../../utils/api";
 
 const Login = ({ onAuth }) => {
   const navigate = useNavigate();
@@ -32,8 +32,12 @@ const Login = ({ onAuth }) => {
     try {
       setLoading(true);
 
-      const res = await authFetch("/auth/login", {
+      const res = await fetch(apiUrl("/auth/login"), {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           usernameOrEmail: usernameOrEmail.trim(),
           password,
@@ -65,8 +69,12 @@ const Login = ({ onAuth }) => {
 
   const handleSuccess = async (response) => {
     try {
-      const res = await authFetch("/auth/google/callback", {
+      const res = await fetch(apiUrl("/auth/google/callback"), {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           token: response.credential,
         }),
@@ -151,7 +159,7 @@ const Login = ({ onAuth }) => {
                 placeholder="Username or Email"
                 value={usernameOrEmail}
                 onChange={(e) => setUsernameOrEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 
@@ -160,7 +168,7 @@ const Login = ({ onAuth }) => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 

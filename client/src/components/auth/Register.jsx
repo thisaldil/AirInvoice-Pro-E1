@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
-import { authFetch, saveAuthData } from "../../utils/api";
+import { apiUrl, saveAuthData } from "../../utils/api";
 
 const Register = ({ onAuth }) => {
   const navigate = useNavigate();
@@ -55,8 +55,12 @@ const Register = ({ onAuth }) => {
     try {
       setLoading(true);
 
-      const res = await authFetch("/auth/register", {
+      const res = await fetch(apiUrl("/auth/register"), {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           username: username.trim(),
           name: username.trim(),
@@ -93,8 +97,12 @@ const Register = ({ onAuth }) => {
     try {
       const token = response.credential;
 
-      const verify = await authFetch("/auth/google/register", {
+      const verify = await fetch(apiUrl("/auth/google/register"), {
         method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           token,
         }),
@@ -173,7 +181,7 @@ const Register = ({ onAuth }) => {
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 
@@ -182,7 +190,7 @@ const Register = ({ onAuth }) => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 
@@ -191,7 +199,7 @@ const Register = ({ onAuth }) => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 
@@ -200,7 +208,7 @@ const Register = ({ onAuth }) => {
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
 

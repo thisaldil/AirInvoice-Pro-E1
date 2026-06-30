@@ -1,18 +1,18 @@
 {
   "files": {
     "main.css": "/static/css/main.717f11eb.css",
-    "main.js": "/static/js/main.0ec66658.js",
+    "main.js": "/static/js/main.eec0edf7.js",
     "static/js/453.258b012d.chunk.js": "/static/js/453.258b012d.chunk.js",
     "static/media/drklogo.png": "/static/media/drklogo.a6c75ea5c41fde52d315.png",
     "static/media/logo.png": "/static/media/logo.b2b658dff5bf2f2e6e6d.png",
     "static/media/bg.png": "/static/media/bg.5852379696b8c6effeaa.png",
     "index.html": "/index.html",
     "main.717f11eb.css.map": "/static/css/main.717f11eb.css.map",
-    "main.0ec66658.js.map": "/static/js/main.0ec66658.js.map",
+    "main.eec0edf7.js.map": "/static/js/main.eec0edf7.js.map",
     "453.258b012d.chunk.js.map": "/static/js/453.258b012d.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.717f11eb.css",
-    "static/js/main.0ec66658.js"
+    "static/js/main.eec0edf7.js"
   ]
 }
