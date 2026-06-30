@@ -1,67 +1,155 @@
-const User = require("../models/User");
-const axios = require("axios");
-const nodemailer = require("nodemailer");
-const Invoice = require("../models/Invoice");
+const mongoose = require("mongoose");
 const Template = require("../models/Template.js");
 
-//save template
+const getRequestUserId = (req) => req.userId || req.user?._id?.toString();
+
+const assertOwnedUserParam = (req, res, userId) => {
+    const requestUserId = getRequestUserId(req);
+    if (userId && userId !== requestUserId) {
+        res.status(403).json({ error: "You do not have access to this user's data" });
+        return false;
+    }
+    return true;
+};
+
+const buildTemplatePayload = (body, userId) => ({
+    userId,
+    name: body.name,
+    description: body.description,
+    isDefault: Boolean(body.isDefault),
+    company: {
+        name: body.company?.name,
+        logo: body.company?.logo,
+        address: body.company?.address,
+    },
+    design: {
+        accentColor: body.design?.accentColor,
+        showFooter: body.design?.showFooter,
+        footerText: body.design?.footerText,
+    },
+});
+
 exports.createTemplate = async (req, res) => {
     try {
-        const newTemplate = new Template(req.body);
-        const savedTemplate = await newTemplate.save();
-        res.status(201).json(savedTemplate);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to save template" });
-    }
-};
+        const requestUserId = getRequestUserId(req);
+        const templateData = buildTemplatePayload(req.body, requestUserId);
 
-//get all templates by user id
-exports.getTemplates = async (req, res) => {
-    try {
-        const templates = await Template.find({ userId: req.params.userId });
-        res.status(200).json(templates);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch templates" });
-    }
-};
-
-//get template by id
-exports.getTemplateById = async (req, res) => {
-    try {
-        const template = await Template.findById(req.params.id);
-        if (!template) {
-            return res.status(404).json({ error: "Template not found" });
+        if (!templateData.name) {
+            return res.status(400).json({ error: "Template name is required" });
         }
-        res.status(200).json(template);
+
+        if (templateData.isDefault) {
+            await Template.updateMany({ userId: requestUserId }, { $set: { isDefault: false } });
+        }
+
+        const savedTemplate = await Template.create(templateData);
+        return res.status(201).json(savedTemplate);
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch template" });
+        console.error("Failed to save template:", error);
+        return res.status(500).json({ error: "Failed to save template" });
     }
 };
 
-//update template by id
-exports.updateTemplate = async (req, res) => {
+exports.getTemplates = async (req, res) => {
+    if (!assertOwnedUserParam(req, res, req.params.userId)) return;
+
     try {
-        const template = await Template.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
+        const templates = await Template.find({ userId: getRequestUserId(req) }).sort({ createdAt: -1 });
+        return res.status(200).json(templates);
+    } catch (error) {
+        console.error("Failed to fetch templates:", error);
+        return res.status(500).json({ error: "Failed to fetch templates" });
+    }
+};
+
+exports.getTemplateById = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+    }
+
+    try {
+        const template = await Template.findOne({
+            _id: req.params.id,
+            userId: getRequestUserId(req),
         });
         if (!template) {
             return res.status(404).json({ error: "Template not found" });
         }
-        res.status(200).json(template);
+        return res.status(200).json(template);
     } catch (error) {
-        res.status(500).json({ error: "Failed to update template" });
+        console.error("Failed to fetch template:", error);
+        return res.status(500).json({ error: "Failed to fetch template" });
     }
-}
+};
 
-//delete template by id
-exports.deleteTemplate = async (req, res) => {
+exports.updateTemplate = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+    }
+
     try {
-        const template = await Template.findByIdAndDelete(req.params.id);
+        const requestUserId = getRequestUserId(req);
+        const existingTemplate = await Template.findOne({
+            _id: req.params.id,
+            userId: requestUserId,
+        });
+
+        if (!existingTemplate) {
+            return res.status(404).json({ error: "Template not found" });
+        }
+
+        if (req.body.isDefault === true) {
+            await Template.updateMany(
+                { userId: requestUserId, _id: { $ne: existingTemplate._id } },
+                { $set: { isDefault: false } }
+            );
+        }
+
+        const updates = buildTemplatePayload(
+            {
+                ...existingTemplate.toObject(),
+                ...req.body,
+                company: {
+                    ...existingTemplate.company?.toObject?.(),
+                    ...(req.body.company || {}),
+                },
+                design: {
+                    ...existingTemplate.design?.toObject?.(),
+                    ...(req.body.design || {}),
+                },
+            },
+            requestUserId
+        );
+
+        const template = await Template.findOneAndUpdate(
+            { _id: req.params.id, userId: requestUserId },
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        return res.status(200).json(template);
+    } catch (error) {
+        console.error("Failed to update template:", error);
+        return res.status(500).json({ error: "Failed to update template" });
+    }
+};
+
+exports.deleteTemplate = async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+    }
+
+    try {
+        const template = await Template.findOneAndDelete({
+            _id: req.params.id,
+            userId: getRequestUserId(req),
+        });
         if (!template) {
             return res.status(404).json({ error: "Template not found" });
         }
-        res.status(200).json({ message: "Template deleted successfully" });
+        return res.status(200).json({ message: "Template deleted successfully" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to delete template" });
+        console.error("Failed to delete template:", error);
+        return res.status(500).json({ error: "Failed to delete template" });
     }
-}
+};

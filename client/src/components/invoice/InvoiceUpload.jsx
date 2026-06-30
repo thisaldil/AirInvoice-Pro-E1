@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { FileUpIcon, FileIcon, CheckCircleIcon, XIcon } from "lucide-react";
-import axios from "axios";
+import { authFetch } from "../../utils/api";
 
 function InvoiceUpload({ onUpload }) {
   const [file, setFile] = useState(null);
@@ -63,18 +63,16 @@ function InvoiceUpload({ onUpload }) {
       const formData = new FormData();
       formData.append("ticket", file);
 
-      const response = await axios.post(
-        "https://air-invoice-pro-jd9l.vercel.app/ocr/analyze",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      const response = await authFetch("/ocr/analyze", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
 
-      if (response.data) {
-        onUpload(response.data);
+      if (response.ok && data) {
+        onUpload(data);
       } else {
-        throw new Error("Failed to extract ticket details");
+        throw new Error(data.error || "Failed to extract ticket details");
       }
     } catch (err) {
       console.error("Ticket processing error:", err);

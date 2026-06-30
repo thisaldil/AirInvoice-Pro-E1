@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon, CheckIcon, EditIcon, TrashIcon } from "lucide-react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { authFetch } from "../../utils/api";
 
 function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await axios.get(
-          `https://air-invoice-pro-jd9l.vercel.app/template/getTemplates/${userId}`
-        );
-        setTemplates(res.data);
-        const defaultTemplate = res.data.find((t) => t.isDefault);
+        const res = await authFetch("/template/getTemplates");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load templates");
+        }
+
+        setTemplates(data);
+        const defaultTemplate = data.find((t) => t.isDefault);
         if (defaultTemplate) setSelectedTemplateId(defaultTemplate._id);
       } catch (err) {
         console.error("Failed to load templates:", err);
@@ -34,19 +37,26 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
           : { ...template, isDefault: false }
       );
 
-      await Promise.all(
+      const responses = await Promise.all(
         updatedTemplates.map((template) =>
-          axios.put(
-            `https://air-invoice-pro-jd9l.vercel.app/template/updateTemplate/${template._id}`,
-            {
+          authFetch(`/template/updateTemplate/${template._id}`, {
+            method: "PUT",
+            body: JSON.stringify({
               isDefault: template.isDefault,
-            }
-          )
+            }),
+          })
         )
       );
 
+      const failedResponse = responses.find((res) => !res.ok);
+      if (failedResponse) {
+        const data = await failedResponse.json();
+        throw new Error(data.error || "Failed to update default template");
+      }
+
       setTemplates(updatedTemplates);
       setSelectedTemplateId(templateId);
+      toast.success("Default template updated.");
     } catch (err) {
       console.error("Failed to update default template:", err);
     }
@@ -55,9 +65,13 @@ function TemplateManager({ invoiceData, onSelectTemplate, onCreateTemplate }) {
   const handleDeleteTemplate = async (templateId) => {
     if (window.confirm("Are you sure you want to delete this template?")) {
       try {
-        await axios.delete(
-          `https://air-invoice-pro-jd9l.vercel.app/template/deleteTemplate/${templateId}`
-        );
+        const res = await authFetch(`/template/deleteTemplate/${templateId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to delete template");
+        }
         setTemplates((prev) =>
           prev.filter((template) => template._id !== templateId)
         );

@@ -6,17 +6,25 @@ const backendPath = (path) =>
 
 export const apiUrl = (path) => `${API_BASE_URL}${backendPath(path)}`;
 
-export const authFetch = (path, options = {}) => {
+export const authHeaders = (headers = {}) => {
   const token = localStorage.getItem("token");
+  return {
+    ...(token && token !== "cookie-authenticated" ? { Authorization: `Bearer ${token}` } : {}),
+    ...headers,
+  };
+};
+
+export const authFetch = (path, options = {}) => {
+  const isFormData = options.body instanceof FormData;
+  const headers = authHeaders({
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    ...(options.headers || {}),
+  });
 
   return fetch(apiUrl(path), {
     ...options,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
+    headers,
   });
 };
 

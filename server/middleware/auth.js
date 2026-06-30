@@ -8,7 +8,7 @@ const getTokenFromRequest = (req) => {
   if (header.startsWith("Bearer ")) {
     return header.slice(7);
   }
-  return null;
+  return req.cookies?.token || null;
 };
 
 const requireAuth = async (req, res, next) => {

@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { SearchIcon, TrashIcon } from "lucide-react";
 import toast from 'react-hot-toast';
+import { authFetch } from "../utils/api";
 
 const AllInvoices = ({ setGeneratedInvoice }) => {
   const [invoices, setInvoices] = useState([]);
   const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
   const [duplicateRefs, setDuplicateRefs] = useState(new Set());
 
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const res = await axios.get(
-          `https://air-invoice-pro-jd9l.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`
-        );
-        const sortedInvoices = res.data.sort(
+        const res = await authFetch("/invoice/all");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load invoices");
+        }
+
+        const sortedInvoices = data.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
         );
         setInvoices(sortedInvoices);
@@ -29,7 +32,7 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
     };
 
     fetchInvoices();
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     const bookingRefCounts = {};
@@ -91,9 +94,13 @@ const AllInvoices = ({ setGeneratedInvoice }) => {
   const handleDeleteInvoice = async (invoiceId) => {
     if (window.confirm("Are you sure you want to delete this invoice?")) {
       try {
-        await axios.delete(
-          `https://air-invoice-pro-jd9l.vercel.app/invoice/deleteInvoice/${invoiceId}`
-        );
+        const res = await authFetch(`/invoice/deleteInvoice/${invoiceId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to delete invoice");
+        }
         setInvoices((prev) =>
           prev.filter((invoice) => invoice._id !== invoiceId)
         );

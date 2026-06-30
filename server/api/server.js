@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
 
 const connectDB = require("../database");
+const { requireAuth } = require("../middleware/auth");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -85,7 +86,7 @@ app.use("/ocr", ocrRoutes);
 // ---- Cloudinary signature endpoint ----
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
-app.post("/generate-signature", (req, res) => {
+app.post("/generate-signature", requireAuth, (req, res) => {
   try {
     const { timestamp } = req.body;
     if (!timestamp) {

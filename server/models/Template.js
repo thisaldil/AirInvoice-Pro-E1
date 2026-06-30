@@ -18,4 +18,7 @@ const TemplateSchema = new Schema({
   },
 }, { timestamps: true });
 
+TemplateSchema.index({ userId: 1, createdAt: -1 });
+TemplateSchema.index({ userId: 1, isDefault: 1 });
+
 module.exports = mongoose.model("Template", TemplateSchema);

@@ -33,4 +33,7 @@ const invoiceSchema = new Schema(
   { timestamps: true }
 ); // <- this line adds createdAt and updatedAt
 
+invoiceSchema.index({ userId: 1, createdAt: -1 });
+invoiceSchema.index({ userId: 1, "invoiceDetails.bookingReference": 1 });
+
 module.exports = mongoose.model("Invoice", invoiceSchema);

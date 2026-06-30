@@ -8,6 +8,7 @@ import {
   CheckIcon,
 } from "lucide-react";
 import toast from 'react-hot-toast';
+import { authFetch } from "../../utils/api";
 
 function SendOptions({ invoice, onBack }) {
   const [invoiceData, setInvoiceData] = useState(null);
@@ -23,10 +24,12 @@ function SendOptions({ invoice, onBack }) {
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const res = await axios.get(
-          `https://air-invoice-pro-jd9l.vercel.app/invoice/getInvoiceDetailsByInvoiceId/${invoice.invoiceId}`
-        );
-        setInvoiceData(res.data);
+        const res = await authFetch(`/invoice/getInvoiceDetailsByInvoiceId/${invoice.invoiceId}`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load invoice");
+        }
+        setInvoiceData(data);
       } catch (err) {
         console.error("Failed to load invoice preview", err);
       }
@@ -41,10 +44,17 @@ function SendOptions({ invoice, onBack }) {
     setIsSending(true);
     try {
       if (sendMethod === "email") {
-        await axios.post("https://air-invoice-pro-jd9l.vercel.app/invoice/sendInvoiceEmail", {
-          email,
-          pdfUrl: invoiceData?.pdfUrl,
+        const res = await authFetch("/invoice/sendInvoiceEmail", {
+          method: "POST",
+          body: JSON.stringify({
+            email,
+            invoiceId: invoice.invoiceId,
+          }),
         });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to send invoice");
+        }
       }
       if (sendMethod === "whatsapp") {
         const message = `Dear Customer,\n\nThis is ${invoice.template.company.name}. Please find your invoice below:\n\n${invoiceData?.pdfUrl}\n\nThank you for your business.`;

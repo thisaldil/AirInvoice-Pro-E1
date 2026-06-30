@@ -38,6 +38,8 @@ const upload = multer({
   },
 });
 
+router.use(requireAuth);
+
 router.post(
   "/upload-ticket",
   upload.single("ticket"),
@@ -63,13 +65,9 @@ router.get("/all", invoiceController.getAllInvoices);
 router.get("/recent", invoiceController.getMostRecentInvoices);
 
 // Get this month's invoices
-router.get("/month", requireAuth, invoiceController.getMonthlyInvoices);
+router.get("/month", invoiceController.getMonthlyInvoices);
 
 // Get this month's total revenue
-router.get(
-  "/month/revenue",
-  requireAuth,
-  invoiceController.getMonthlyRevenue
-);
+router.get("/month/revenue", invoiceController.getMonthlyRevenue);
 
 module.exports = router;

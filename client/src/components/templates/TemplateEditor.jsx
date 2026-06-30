@@ -14,6 +14,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
 import PdfInvoice from "../PdfInvoice";
 import toast from "react-hot-toast";
+import { authFetch } from "../../utils/api";
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
   // Internal theme state - no external context needed
@@ -45,7 +46,6 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const userId = localStorage.getItem("userId");
   const previewRef = useRef();
   const [uploading, setUploading] = useState(false);
   const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
@@ -55,12 +55,15 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   useEffect(() => {
     if (id) {
       setIsEditing(true);
-      axios
-        .get(
-          `https://air-invoice-pro-jd9l.vercel.app/template/getTemplateById/${id}`
-        )
-        .then((res) => {
-          const t = res.data;
+      authFetch(`/template/getTemplateById/${id}`)
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Failed to load template");
+          }
+          return data;
+        })
+        .then((t) => {
           setTemplateName(t.name);
           setCompanyName(t.company.name);
           setCompanyLogo(t.company.logo);
@@ -72,24 +75,25 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
         .catch((err) => {
           console.error("Error loading template:", err);
           toast.error("Failed to load template for editing.");
-          navigate("/template-manager");
+          navigate("/dashboard/templates");
         });
     }
-  }, [id]);
+  }, [id, navigate]);
 
-  const checkDuplicateInvoice = async (userId, bookingRef) => {
+  const checkDuplicateInvoice = async (bookingRef) => {
     try {
-      const { data } = await axios.get(
-        `https://air-invoice-pro-jd9l.vercel.app/invoice/getInvoiceDetailsByUserId/${userId}`
-      );
+      const res = await authFetch("/invoice/all");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to verify existing invoices");
+      }
+
       return (
         Array.isArray(data) &&
         data.some((inv) => inv?.invoiceDetails?.bookingReference === bookingRef)
       );
     } catch (error) {
-      if (error?.response?.status === 404) {
-        return false;
-      }
       console.error("Error checking duplicates:", error);
       throw new Error("Unable to verify existing invoices");
     }
@@ -97,7 +101,6 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
   const handleSave = async () => {
     const updatedTemplate = {
-      userId,
       name: templateName,
       description: "Custom invoice template",
       isDefault: false,
@@ -123,7 +126,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
         let duplicateExists = false;
         try {
-          duplicateExists = await checkDuplicateInvoice(userId, bookingRef);
+          duplicateExists = await checkDuplicateInvoice(bookingRef);
         } catch (err) {
           toast.error(err.message);
           setUploading(false);
@@ -143,10 +146,23 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           }
         }
 
+        let invoiceTemplate = { ...updatedTemplate, _id: id };
+        if (!id) {
+          const templateResponse = await authFetch("/template/createTemplate", {
+            method: "POST",
+            body: JSON.stringify(updatedTemplate),
+          });
+          invoiceTemplate = await templateResponse.json();
+
+          if (!templateResponse.ok) {
+            throw new Error(invoiceTemplate.error || "Failed to save template");
+          }
+        }
+
         const blob = await pdf(
           <PdfInvoice
             invoiceData={invoiceData}
-            templateData={updatedTemplate}
+            templateData={invoiceTemplate}
           />
         ).toBlob();
 
@@ -168,17 +184,16 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
         const cloudinaryUrl = cloudinaryRes.data.secure_url;
 
-        const saveInvoiceRes = await axios.post(
-          "https://air-invoice-pro-jd9l.vercel.app/invoice/saveInvoiceDetails",
-          {
-            userId,
+        const saveInvoiceRes = await authFetch("/invoice/saveInvoiceDetails", {
+          method: "POST",
+          body: JSON.stringify({
             pdfUrl: cloudinaryUrl,
             template: {
-              _id: id,
+              _id: invoiceTemplate._id,
               company: {
-                name: companyName,
-                logo: companyLogo,
-                address: companyAddress,
+                name: invoiceTemplate.company?.name,
+                logo: invoiceTemplate.company?.logo,
+                address: invoiceTemplate.company?.address,
               },
             },
             invoiceDetails: {
@@ -192,12 +207,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
               currency: invoiceData.currency,
               paymentMethod: invoiceData.paymentMethod,
             },
-          }
-        );
+          }),
+        });
+        const savedInvoiceData = await saveInvoiceRes.json();
+
+        if (!saveInvoiceRes.ok) {
+          throw new Error(savedInvoiceData.error || "Failed to save invoice");
+        }
 
         onSave?.({
-          template: updatedTemplate,
-          invoiceId: saveInvoiceRes.data.invoice._id,
+          template: invoiceTemplate,
+          invoiceId: savedInvoiceData.invoice._id,
         });
         navigate("/dashboard/send");
         return;
@@ -205,20 +225,24 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
       let response;
       if (isEditing) {
-        response = await axios.put(
-          `https://air-invoice-pro-jd9l.vercel.app/template/updateTemplate/${id}`,
-          updatedTemplate
-        );
-        toast.success("Template updated successfully!");
+        response = await authFetch(`/template/updateTemplate/${id}`, {
+          method: "PUT",
+          body: JSON.stringify(updatedTemplate),
+        });
       } else {
-        response = await axios.post(
-          "https://air-invoice-pro-jd9l.vercel.app/template/createTemplate",
-          updatedTemplate
-        );
-        toast.success("Template created successfully!");
+        response = await authFetch("/template/createTemplate", {
+          method: "POST",
+          body: JSON.stringify(updatedTemplate),
+        });
       }
 
-      onSave?.(response.data);
+      const templateData = await response.json();
+      if (!response.ok) {
+        throw new Error(templateData.error || "Failed to save template");
+      }
+
+      toast.success(isEditing ? "Template updated successfully!" : "Template created successfully!");
+      onSave?.(templateData);
       navigate("/dashboard/templates");
     } catch (err) {
       console.error("Failed to save template or PDF:", err);

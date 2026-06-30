@@ -1,14 +1,36 @@
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 const { fromPath } = require("pdf2pic");
 const Tesseract = require("tesseract.js");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
-const Invoice = require("../models/Invoice");
 const axios = require("axios");
+const Invoice = require("../models/Invoice");
+const Template = require("../models/Template");
 
-//upload invoice and perform OCR
+const getRequestUserId = (req) => req.userId || req.user?._id?.toString();
+
+const assertOwnedUserParam = (req, res, userId) => {
+  const requestUserId = getRequestUserId(req);
+  if (userId && userId !== requestUserId) {
+    res.status(403).json({ error: "You do not have access to this user's data" });
+    return false;
+  }
+  return true;
+};
+
+const parseAmount = (value) => {
+  const amount = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+// Upload invoice and perform OCR.
 exports.uploadInvoice = async (req, res) => {
+  if (!req.file?.path) {
+    return res.status(400).json({ success: false, message: "Invoice PDF is required" });
+  }
+
   const filePath = req.file.path;
   const outputDir = `temp_output_${Date.now()}`;
 
@@ -25,25 +47,28 @@ exports.uploadInvoice = async (req, res) => {
       const {
         data: { text },
       } = await Tesseract.recognize(imgPath, "eng");
-      fullText += text + "\n";
+      fullText += `${text}\n`;
     }
 
     fs.unlinkSync(filePath);
-    fs.rmSync(outputDir, { recursive: true });
+    fs.rmSync(outputDir, { recursive: true, force: true });
 
-    res.status(200).json({ success: true, text: fullText });
+    return res.status(200).json({ success: true, text: fullText });
   } catch (err) {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (fs.existsSync(outputDir)) fs.rmSync(outputDir, { recursive: true, force: true });
     console.error("OCR processing error:", err);
-    res.status(500).json({ success: false, message: "OCR failed." });
+    return res.status(500).json({ success: false, message: "OCR failed." });
   }
 };
 
-//save invoice details
+// Save invoice details for the logged-in user.
 exports.saveInvoiceDetails = async (req, res) => {
-  const { userId, pdfUrl, template, invoiceDetails, priceDetails } = req.body;
+  const requestUserId = getRequestUserId(req);
+  const { pdfUrl, template, invoiceDetails, priceDetails } = req.body;
 
   if (
-    !userId ||
+    !requestUserId ||
     !pdfUrl ||
     !template?._id ||
     !invoiceDetails?.bookingReference ||
@@ -54,16 +79,29 @@ exports.saveInvoiceDetails = async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
+  if (!mongoose.isValidObjectId(template._id)) {
+    return res.status(400).json({ error: "Invalid template ID" });
+  }
+
   try {
+    const ownedTemplate = await Template.findOne({
+      _id: template._id,
+      userId: requestUserId,
+    });
+
+    if (!ownedTemplate) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+
     const invoice = new Invoice({
-      userId,
+      userId: requestUserId,
       pdfUrl,
       template: {
-        _id: template._id,
+        _id: ownedTemplate._id,
         company: {
-          name: template.company.name,
-          logo: template.company.logo,
-          address: template.company.address,
+          name: template.company?.name || ownedTemplate.company?.name,
+          logo: template.company?.logo || ownedTemplate.company?.logo,
+          address: template.company?.address || ownedTemplate.company?.address,
         },
       },
       invoiceDetails: {
@@ -80,71 +118,81 @@ exports.saveInvoiceDetails = async (req, res) => {
 
     await invoice.save();
 
-    res.status(201).json({ message: "Invoice saved successfully", invoice });
+    return res.status(201).json({ message: "Invoice saved successfully", invoice });
   } catch (err) {
     console.error("Error saving invoice:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
-//get invoice details by userId
+// Get invoices for the logged-in user. The URL param is kept for backward compatibility.
 exports.getInvoiceDetailsByUserId = async (req, res) => {
+  const requestUserId = getRequestUserId(req);
   const { userId } = req.params;
-  if (!userId) {
-    return res.status(400).json({ error: "User ID is required" });
-  }
+
+  if (!assertOwnedUserParam(req, res, userId)) return;
 
   try {
-    const invoices = await Invoice.find({ userId });
-    if (!invoices.length) {
-      return res.status(404).json({ error: "No invoices found for this user" });
-    }
-    res.json(invoices);
+    const invoices = await Invoice.find({ userId: requestUserId }).sort({ createdAt: -1 });
+    return res.json(invoices);
   } catch (err) {
     console.error("Error fetching invoices:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
-//get invoice by invoiceId
+// Get a single invoice owned by the logged-in user.
 exports.getInvoiceDetailsByInvoiceId = async (req, res) => {
+  const requestUserId = getRequestUserId(req);
   const { invoiceId } = req.params;
 
-  if (!invoiceId) {
-    return res.status(400).json({ error: "Invoice ID is required" });
+  if (!mongoose.isValidObjectId(invoiceId)) {
+    return res.status(400).json({ error: "Invalid invoice ID" });
   }
 
   try {
-    const invoice = await Invoice.findById(invoiceId);
+    const invoice = await Invoice.findOne({ _id: invoiceId, userId: requestUserId });
     if (!invoice) {
       return res.status(404).json({ error: "Invoice not found" });
     }
 
-    res.status(200).json(invoice);
+    return res.status(200).json(invoice);
   } catch (err) {
     console.error("Error fetching invoice:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
-//send invoice email
+// Send an invoice email only for an invoice owned by the logged-in user.
 exports.sendInvoiceEmail = async (req, res) => {
-  const { email, pdfUrl } = req.body;
+  const requestUserId = getRequestUserId(req);
+  const { email, invoiceId, pdfUrl } = req.body;
 
   if (!email || typeof email !== "string" || !email.trim()) {
     return res.status(400).json({ error: "Valid recipient email is required" });
   }
 
-  if (!pdfUrl || typeof pdfUrl !== "string" || !pdfUrl.startsWith("http")) {
-    return res.status(400).json({ error: "Valid PDF URL is required" });
+  if (invoiceId && !mongoose.isValidObjectId(invoiceId)) {
+    return res.status(400).json({ error: "Invalid invoice ID" });
+  }
+
+  if (!invoiceId && !pdfUrl) {
+    return res.status(400).json({ error: "Invoice ID is required" });
   }
 
   const fileName = `${uuidv4()}.pdf`;
   const tempPath = path.join("/tmp", fileName);
 
   try {
-    // Download PDF from Cloudinary
-    const response = await axios.get(pdfUrl, { responseType: "arraybuffer" });
+    const invoice = invoiceId
+      ? await Invoice.findOne({ _id: invoiceId, userId: requestUserId })
+      : await Invoice.findOne({ pdfUrl, userId: requestUserId });
+
+    if (!invoice?.pdfUrl) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    const response = await axios.get(invoice.pdfUrl, { responseType: "arraybuffer" });
     fs.writeFileSync(tempPath, Buffer.from(response.data));
 
     const transporter = nodemailer.createTransport({
@@ -161,7 +209,7 @@ exports.sendInvoiceEmail = async (req, res) => {
       subject: "Your Invoice from AirInvoice",
       html: `
           <div style="font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #004cc7;">✈️ AirInvoice Pro</h2>
+            <h2 style="color: #004cc7;">AirInvoice Pro</h2>
             <p>Dear Customer,</p>
             <p>Thank you for choosing AirInvoice Pro.</p>
             <p>Please find your attached invoice below.</p>
@@ -190,75 +238,50 @@ exports.sendInvoiceEmail = async (req, res) => {
     await transporter.sendMail(mailOptions);
     fs.unlinkSync(tempPath);
 
-    res.status(200).json({ message: "Invoice email sent successfully" });
+    return res.status(200).json({ message: "Invoice email sent successfully" });
   } catch (error) {
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     console.error("Error sending invoice email:", error);
-    res.status(500).json({ error: "Failed to send invoice email" });
+    return res.status(500).json({ error: "Failed to send invoice email" });
   }
 };
 
-//delete template by id
 exports.deleteInvoice = async (req, res) => {
+  const requestUserId = getRequestUserId(req);
+  const { invoiceId } = req.params;
+
+  if (!mongoose.isValidObjectId(invoiceId)) {
+    return res.status(400).json({ error: "Invalid invoice ID" });
+  }
+
   try {
-    const invoice = await Invoice.findByIdAndDelete(req.params.invoiceId);
+    const invoice = await Invoice.findOneAndDelete({ _id: invoiceId, userId: requestUserId });
     if (!invoice) {
-      return res.status(404).json({ error: "invoice not found" });
+      return res.status(404).json({ error: "Invoice not found" });
     }
-    res.status(200).json({ message: "invoice deleted successfully" });
+    return res.status(200).json({ message: "Invoice deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete invoice" });
+    return res.status(500).json({ error: "Failed to delete invoice" });
   }
 };
 
 exports.getAllInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.find({}).sort({ createdAt: -1 });
-    res.status(200).json(invoices);
+    const invoices = await Invoice.find({ userId: getRequestUserId(req) }).sort({ createdAt: -1 });
+    return res.status(200).json(invoices);
   } catch (err) {
     console.error("Error fetching invoices:", err);
-    res.status(500).json({ error: "Failed to fetch invoices" });
+    return res.status(500).json({ error: "Failed to fetch invoices" });
   }
 };
 
 exports.getRecentInvoices = async (req, res) => {
   try {
     const recentInvoices = await Invoice.find(
-      {},
+      { userId: getRequestUserId(req) },
       {
         "invoiceDetails.passengerName": 1,
-        "invoiceDetails.passportNumber": 1,
-        "invoiceDetails.nationality": 1,
-        "priceDetails.totalAmount": 1,
-        createdAt: 1, // include this if you want date
-      }
-    )
-      .sort({ createdAt: -1 })
-      .limit(3);
-
-    res.status(200).json(recentInvoices);
-  } catch (err) {
-    console.error("Error fetching recent invoices:", err);
-    res.status(500).json({ error: "Failed to fetch recent invoices" });
-  }
-};
-
-exports.getMostRecentInvoices = exports.getRecentInvoices;
-
-exports.getRecentInvoices = async (req, res) => {
-  try {
-    const userId = req.user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized: No user logged in" });
-    }
-
-    const recentInvoices = await Invoice.find(
-      { userId },
-      {
-        "invoiceDetails.passengerName": 1,
-        "invoiceDetails.passportNumber": 1,
-        "invoiceDetails.nationality": 1,
+        "invoiceDetails.passengers": 1,
         "priceDetails.totalAmount": 1,
         createdAt: 1,
       }
@@ -266,67 +289,52 @@ exports.getRecentInvoices = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(3);
 
-    res.status(200).json(recentInvoices);
+    return res.status(200).json(recentInvoices);
   } catch (err) {
     console.error("Error fetching recent invoices:", err);
-    res.status(500).json({ error: "Failed to fetch recent invoices" });
+    return res.status(500).json({ error: "Failed to fetch recent invoices" });
   }
 };
 
+exports.getMostRecentInvoices = exports.getRecentInvoices;
+
 exports.getMonthlyInvoices = async (req, res) => {
   try {
-    const userId = req.user._id;
-
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59
-    );
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     const invoices = await Invoice.find({
-      userId,
+      userId: getRequestUserId(req),
       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
     });
 
-    res.status(200).json(invoices);
+    return res.status(200).json(invoices);
   } catch (err) {
     console.error("Error fetching monthly invoices:", err);
-    res.status(500).json({ error: "Failed to fetch monthly invoices" });
+    return res.status(500).json({ error: "Failed to fetch monthly invoices" });
   }
 };
 
 exports.getMonthlyRevenue = async (req, res) => {
   try {
-    const userId = req.user._id;
-
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59
-    );
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     const invoices = await Invoice.find({
-      userId,
+      userId: getRequestUserId(req),
       createdAt: { $gte: startOfMonth, $lte: endOfMonth },
     });
 
-    const totalRevenue = invoices.reduce((sum, inv) => {
-      return sum + (inv.priceDetails?.totalAmount || 0);
-    }, 0);
+    const totalRevenue = invoices.reduce(
+      (sum, inv) => sum + parseAmount(inv.priceDetails?.totalAmount),
+      0
+    );
 
-    res.status(200).json({ totalRevenue });
+    return res.status(200).json({ totalRevenue });
   } catch (err) {
     console.error("Error calculating monthly revenue:", err);
-    res.status(500).json({ error: "Failed to calculate monthly revenue" });
+    return res.status(500).json({ error: "Failed to calculate monthly revenue" });
   }
 };

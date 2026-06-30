@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FileTextIcon, FileUpIcon, SendIcon, BoxIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiUrl } from "../utils/api";
+import { authFetch } from "../utils/api";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -23,16 +23,14 @@ function Dashboard() {
     setUser(storedUser);
 
     // ✅ Fetch recent invoices
-    fetch(apiUrl("/invoice/recent"), {
-      credentials: "include",
-    })
+    authFetch("/invoice/recent")
       .then((res) => res.json())
       .then((data) => {
-        const formatted = data.map((inv) => ({
+        const formatted = (Array.isArray(data) ? data : []).map((inv) => ({
           id: inv._id,
           customer: inv.invoiceDetails?.passengerName || "N/A",
-          passport: inv.invoiceDetails?.passportNumber || "N/A",
-          nationality: inv.invoiceDetails?.nationality || "N/A",
+          passport: inv.invoiceDetails?.passengers?.[0]?.passportNumber || "N/A",
+          nationality: inv.invoiceDetails?.passengers?.[0]?.nationality || "N/A",
           amount: inv.priceDetails?.totalAmount
             ? `$${inv.priceDetails.totalAmount}`
             : "N/A",
@@ -48,21 +46,17 @@ function Dashboard() {
       });
 
     // ✅ Fetch this month's invoices
-    fetch(apiUrl("/invoice/month"), {
-      credentials: "include",
-    })
+    authFetch("/invoice/month")
       .then((res) => res.json())
       .then((data) => {
-        setMonthlyInvoices(data || []);
+        setMonthlyInvoices(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Failed to load monthly invoices", err);
       });
 
     // ✅ Fetch this month's revenue
-    fetch(apiUrl("/invoice/month/revenue"), {
-      credentials: "include",
-    })
+    authFetch("/invoice/month/revenue")
       .then((res) => res.json())
       .then((data) => {
         setMonthlyRevenue(data.totalRevenue || 0);
@@ -70,7 +64,7 @@ function Dashboard() {
       .catch((err) => {
         console.error("Failed to load monthly revenue", err);
       });
-  }, []);
+  }, [navigate]);
 
   return (
     <div>
