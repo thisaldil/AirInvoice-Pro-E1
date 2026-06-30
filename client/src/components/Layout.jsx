@@ -14,8 +14,9 @@ import {
 } from "lucide-react";
 import logo from "../images/logo.png";
 import darklogo from "../images/drklogo.png";
+import { authFetch, clearAuthData } from "../utils/api";
 
-function Layout() {
+function Layout({ onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -30,9 +31,15 @@ function Layout() {
     { path: "/dashboard/contact", label: "Contact", icon: PhoneCallIcon },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    try {
+      await authFetch("/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+
+    clearAuthData();
+    onLogout?.();
     navigate("/login");
   };
 

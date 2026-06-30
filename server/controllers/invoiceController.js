@@ -211,6 +211,16 @@ exports.deleteInvoice = async (req, res) => {
   }
 };
 
+exports.getAllInvoices = async (req, res) => {
+  try {
+    const invoices = await Invoice.find({}).sort({ createdAt: -1 });
+    res.status(200).json(invoices);
+  } catch (err) {
+    console.error("Error fetching invoices:", err);
+    res.status(500).json({ error: "Failed to fetch invoices" });
+  }
+};
+
 exports.getRecentInvoices = async (req, res) => {
   try {
     const recentInvoices = await Invoice.find(
@@ -232,6 +242,9 @@ exports.getRecentInvoices = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch recent invoices" });
   }
 };
+
+exports.getMostRecentInvoices = exports.getRecentInvoices;
+
 exports.getRecentInvoices = async (req, res) => {
   try {
     const userId = req.user?._id;

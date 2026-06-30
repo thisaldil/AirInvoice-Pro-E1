@@ -2,18 +2,43 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const passport = require("passport");
+const session = require("express-session");
 const connectDB = require("../database");
 const crypto = require("crypto");
-
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+
+app.set("trust proxy", 1);
 app.use(
   cors({
-    origin: "https://air-invoice-client.vercel.app",
+    origin: [
+      "https://air-invoice-client.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+    ],
     credentials: true,
   })
 );
 app.use(express.json());
+app.use(
+  session({
+    name: "airinvoice.sid",
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "airinvoice-dev-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 24,
+    },
+  })
+);
 app.use(passport.initialize());
+app.use(passport.session());
 
 require("../models/User");
 require("../services/passport");
@@ -52,6 +77,4 @@ connectDB().catch((err) => {
   console.error("MongoDB connection error:", err);
 });
 
-module.exports = (req, res) => {
-  app(req, res);
-};
+module.exports = app;

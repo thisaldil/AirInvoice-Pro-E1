@@ -4,48 +4,116 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
+import { authFetch, saveAuthData } from "../../utils/api";
 
-const Register = () => {
+const Register = ({ onAuth }) => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (token) {
-      setIsAuthenticated(true);
       navigate("/dashboard");
     }
-  }, []);
+  }, [navigate]);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username.trim())) {
+      toast.error("Username must be 3-30 characters and use letters, numbers or underscores");
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      toast.error("Please enter a valid email");
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}/.test(password)) {
+      toast.error("Password needs 8 characters, uppercase, lowercase and a number");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await authFetch("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          username: username.trim(),
+          name: username.trim(),
+          email: email.trim(),
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Registration failed. Please try again.");
+        return;
+      }
+
+      if (data.token) {
+        saveAuthData(data);
+        onAuth?.(data.user);
+        toast.success("Registration successful");
+        navigate("/dashboard");
+      } else {
+        toast.success("Registration successful. Please login.");
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Registration Error:", error);
+      toast.error("Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSuccess = async (response) => {
     try {
       const token = response.credential;
 
-      const verify = await fetch("https://air-invoice-pro-jd9l.vercel.app/auth/google/register", {
+      const verify = await authFetch("/auth/google/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({
+          token,
+        }),
       });
-
-      if (!verify.ok) {
-        const msg = await verify.json();
-        toast.error("Registration failed. Please try again.");
-        return;
-      }
 
       const data = await verify.json();
 
+      if (!verify.ok) {
+        toast.error(data.message || "Registration failed. Please try again.");
+        return;
+      }
+
       if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            name: data.user.name,
-            email: data.user.email,
-            picture: data.user.picture,
-          })
-        );
+        saveAuthData(data);
+        onAuth?.(data.user);
+        toast.success("Google registration successful");
         navigate("/dashboard");
+      } else {
+        toast.error("Registration failed. Token not found.");
       }
     } catch (error) {
       console.error("Google Registration Error:", error);
@@ -61,9 +129,9 @@ const Register = () => {
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
-        className="relative flex h-screen w-full overflow-hidden bg-gray-100"
+        className="relative flex min-h-screen w-full overflow-hidden bg-gray-100"
       >
-        {/* Left Side (Branding) */}
+        {/* Left Side Branding */}
         <div className="hidden md:block absolute left-0 top-0 h-full w-1/2 text-white z-0">
           <div className="flex flex-col justify-center items-center h-full px-12">
             <motion.img
@@ -74,30 +142,91 @@ const Register = () => {
               alt="Logo"
               className="w-72 mb-6"
             />
+
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-xl leading-relaxed font-medium text-center max-w-lg text-gray-700"
             >
-              Join AirInvoice Pro to manage your invoices with ease. Automate, track,
-              and send invoices effortlessly.
+              Join AirInvoice Pro to manage your invoices with ease. Automate,
+              track, and send invoices effortlessly.
             </motion.p>
           </div>
         </div>
 
-        {/* Right Side (Form) */}
-        <div className="w-full md:w-1/2 z-10 flex justify-center items-center ml-auto">
+        {/* Right Side Register Form */}
+        <div className="w-full md:w-1/2 z-10 flex justify-center items-center ml-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="bg-white p-10 rounded-lg shadow-xl text-center w-full max-w-sm"
           >
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Register</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">
+              Register
+            </h1>
+
+            <form onSubmit={handleRegister} className="space-y-4 mb-6">
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-500 text-white py-3 rounded-md font-semibold hover:bg-blue-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? "Registering..." : "Register"}
+              </button>
+            </form>
+
+            <div className="flex items-center my-4">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="mx-3 text-gray-500 text-sm">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
             <GoogleLogin
               onSuccess={handleSuccess}
+              onError={() => {
+                console.error("Google Registration Failed");
+                toast.error("Google Registration Failed");
+              }}
             />
+
             <div className="mt-6 text-sm text-gray-600">
               Already have an account?{" "}
               <Link to="/login" className="text-blue-500 hover:underline">

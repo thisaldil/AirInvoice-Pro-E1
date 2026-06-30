@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FileTextIcon, FileUpIcon, SendIcon, BoxIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { apiUrl } from "../utils/api";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -22,7 +23,7 @@ function Dashboard() {
     setUser(storedUser);
 
     // ✅ Fetch recent invoices
-    fetch("https://air-invoice-pro-jd9l.vercel.app/invoice/recent", {
+    fetch(apiUrl("/invoice/recent"), {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -47,7 +48,7 @@ function Dashboard() {
       });
 
     // ✅ Fetch this month's invoices
-    fetch("https://air-invoice-pro-jd9l.vercel.app/invoice/month", {
+    fetch(apiUrl("/invoice/month"), {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -59,7 +60,7 @@ function Dashboard() {
       });
 
     // ✅ Fetch this month's revenue
-    fetch("https://air-invoice-pro-jd9l.vercel.app/invoice/month/revenue", {
+    fetch(apiUrl("/invoice/month/revenue"), {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -83,9 +84,11 @@ function Dashboard() {
               {user.name}
             </span>
             <img
-              src={user.picture
-                .replace("=s96-c", "")
-                .replace("http://", "https://")}
+              src={
+                user.picture
+                  ? user.picture.replace("=s96-c", "").replace("http://", "https://")
+                  : "https://via.placeholder.com/80"
+              }
               alt={user.name}
               className="w-10 h-10 object-cover rounded-full border border-gray-300 "
             />

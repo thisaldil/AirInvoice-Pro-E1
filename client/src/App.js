@@ -21,12 +21,24 @@ import AllInvoices from "./components/AllInvoices";
 import Settings from "./components/Settings";
 import Crm from "./components/Crm";
 import ContactForm from "./components/ContactForm.jsx";
+import { authFetch, clearAuthData, saveAuthData } from "./utils/api";
+
+function ProtectedRoute({ isAuthenticated, children }) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [generatedInvoice, setGeneratedInvoice] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    Boolean(localStorage.getItem("token"))
+  );
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,26 +62,80 @@ function AppWrapper() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
+    let cancelled = false;
+
+    authFetch("/auth/me")
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Unauthenticated");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        saveAuthData({ user: data.user, userId: data.user?._id || data.user?.id });
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        clearAuthData();
+        setIsAuthenticated(false);
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (
-    !isAuthenticated &&
-    window.location.pathname !== "/login" &&
-    window.location.pathname !== "/register"
-  ) {
-    return <Navigate to="/login" />;
+  const handleAuth = () => {
+    setIsAuthenticated(true);
+    setAuthChecked(true);
+  };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100">
+        Loading...
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white transition-colors duration-300">
       <Toaster position="top-center" />
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Login onAuth={handleAuth} />
+            )
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Register onAuth={handleAuth} />
+            )
+          }
+        />
 
-        <Route path="/dashboard" element={<Layout />}>
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Layout onLogout={() => setIsAuthenticated(false)} />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
 
           <Route

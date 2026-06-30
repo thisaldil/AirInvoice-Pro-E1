@@ -4,58 +4,97 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
+import { authFetch, clearAuthData, saveAuthData } from "../../utils/api";
 
-const Login = () => {
+const Login = ({ onAuth }) => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (token) {
-      setIsAuthenticated(true);
       navigate("/dashboard");
     }
-  }, []);
+  }, [navigate]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    if (!usernameOrEmail.trim() || !password) {
+      toast.error("Please enter username/email and password");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await authFetch("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          usernameOrEmail: usernameOrEmail.trim(),
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Invalid username/email or password");
+        return;
+      }
+
+      if (data.token) {
+        saveAuthData(data);
+        onAuth?.(data.user);
+        toast.success("Login successful");
+        navigate("/dashboard");
+      } else {
+        toast.error("Login failed. Token not found.");
+      }
+    } catch (error) {
+      console.error("Login Error:", error);
+      toast.error("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSuccess = async (response) => {
     try {
-      const res = await fetch(
-        "https://air-invoice-pro-jd9l.vercel.app/auth/google/callback",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: response.credential }),
-        }
-      );
+      const res = await authFetch("/auth/google/callback", {
+        method: "POST",
+        body: JSON.stringify({
+          token: response.credential,
+        }),
+      });
 
       if (res.status === 404) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        sessionStorage.clear();
+        clearAuthData();
         toast.info("Account not registered. Please register first.");
         return;
       }
 
-      if (!res.ok) throw new Error("Failed to authenticate");
-
       const data = await res.json();
 
+      if (!res.ok) {
+        toast.error(data.message || "Failed to authenticate");
+        return;
+      }
+
       if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            name: data.user.name,
-            picture: data.user.picture,
-            email: data.user.email,
-          })
-        );
-        localStorage.setItem("userId", data.userId);
-        setIsAuthenticated(true);
-        window.location.href = "/dashboard";
+        saveAuthData(data);
+        onAuth?.(data.user);
+        toast.success("Google login successful");
+        navigate("/dashboard");
+      } else {
+        toast.error("Login failed. Token not found.");
       }
     } catch (error) {
-      console.error("Login Error:", error);
+      console.error("Google Login Error:", error);
       toast.error("Login failed. Please try again.");
     }
   };
@@ -70,7 +109,7 @@ const Login = () => {
         }}
         className="relative flex h-screen w-full overflow-hidden bg-gray-100"
       >
-        {/* Right Side (Login Box) */}
+        {/* Left Side */}
         <div className="hidden md:block absolute left-0 top-0 h-full w-1/2 text-white z-0">
           <div className="flex flex-col justify-center items-center h-full px-12">
             <motion.img
@@ -81,6 +120,7 @@ const Login = () => {
               alt="Logo"
               className="w-72 mb-6"
             />
+
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -93,7 +133,7 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Left Side (Form) */}
+        {/* Right Side Login Form */}
         <div className="w-full md:w-1/2 z-10 flex justify-center items-center ml-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -101,11 +141,52 @@ const Login = () => {
             transition={{ duration: 0.6 }}
             className="bg-white p-10 rounded-lg shadow-xl text-center w-full max-w-sm"
           >
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Login test</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">
+              Login
+            </h1>
+
+            <form onSubmit={handleLogin} className="space-y-4 mb-6">
+              <input
+                type="text"
+                placeholder="Username or Email"
+                value={usernameOrEmail}
+                onChange={(e) => setUsernameOrEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-500 text-white py-3 rounded-md font-semibold hover:bg-blue-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? "Logging in..." : "Login"}
+              </button>
+            </form>
+
+            <div className="flex items-center my-4">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="mx-3 text-gray-500 text-sm">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
             <GoogleLogin
               onSuccess={handleSuccess}
-              onError={() => console.error("Google Login Failed")}
+              onError={() => {
+                console.error("Google Login Failed");
+                toast.error("Google Login Failed");
+              }}
             />
+
             <div className="mt-6 text-sm text-gray-600">
               Don&apos;t have an account?{" "}
               <Link to="/register" className="text-blue-500 hover:underline">

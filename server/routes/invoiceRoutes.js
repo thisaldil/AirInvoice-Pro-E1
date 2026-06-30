@@ -5,6 +5,7 @@ const fs = require("fs");
 const router = express.Router();
 const invoiceController = require("../controllers/invoiceController");
 const ticketController = require("../controllers/ticketController");
+const { requireAuth } = require("../middleware/auth");
 
 // Use /tmp/uploads for Vercel compatibility
 const uploadDir = "/tmp/uploads";
@@ -62,12 +63,12 @@ router.get("/all", invoiceController.getAllInvoices);
 router.get("/recent", invoiceController.getMostRecentInvoices);
 
 // Get this month's invoices
-router.get("/month", ensureLoggedIn(), invoiceController.getMonthlyInvoices);
+router.get("/month", requireAuth, invoiceController.getMonthlyInvoices);
 
 // Get this month's total revenue
 router.get(
   "/month/revenue",
-  ensureLoggedIn(),
+  requireAuth,
   invoiceController.getMonthlyRevenue
 );
 

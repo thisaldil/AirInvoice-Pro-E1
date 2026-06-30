@@ -5,6 +5,13 @@ require('dotenv').config();
 const uri = process.env.URI;
 
 const connectDB = async () => {
+    if (!uri) {
+        if (process.env.NODE_ENV !== 'deployment') {
+            console.warn('Database connection skipped because URI is not set.');
+        }
+        return;
+    }
+
     try {
         await mongoose.connect(uri);
         if (process.env.NODE_ENV !== 'deployment') {
