@@ -3,16 +3,16 @@ const express = require("express");
 const cors = require("cors");
 const passport = require("passport");
 const session = require("express-session");
-const connectDB = require("../database");
-const cookie=require("cookie-parser")
+const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+
+const connectDB = require("../database");
+
 const app = express();
-
-const port=process.env.PORT || 5000
-app.use(cookie())
-app.use(cors({credentials:true}))
-
+const port = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
+
+// ---- CORS setup (single source of truth) ----
 const allowedOrigins = [
   "https://air-invoice-client.vercel.app",
   "http://localhost:3000",
@@ -29,7 +29,6 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-
     return callback(new Error(`CORS blocked origin: ${origin}`));
   },
   credentials: true,
@@ -39,12 +38,19 @@ const corsOptions = {
 
 app.set("trust proxy", 1);
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options(/.*/, cors(corsOptions)); // safer wildcard than "*" for some Express/path-to-regexp versions
+
+// ---- Core middleware (must come before routes) ----
 app.use(express.json());
+app.use(cookieParser());
+
 app.use(
   session({
     name: "airinvoice.sid",
-    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "airinvoice-dev-session-secret",
+    secret:
+      process.env.SESSION_SECRET ||
+      process.env.JWT_SECRET ||
+      "airinvoice-dev-session-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -55,25 +61,28 @@ app.use(
     },
   })
 );
+
 app.use(passport.initialize());
 app.use(passport.session());
 
+// ---- Models & passport strategy ----
 require("../models/User");
 require("../services/passport");
 
+// ---- Routes (mounted AFTER middleware, no duplicates) ----
 const authRoutes = require("../routes/authRoutes");
 const userRoutes = require("../routes/userRoutes");
 const templateRoutes = require("../routes/templateRoutes");
 const invoiceRoutes = require("../routes/invoiceRoutes");
 const ocrRoutes = require("../routes/ocrRoutes");
-const { log } = require("console");
 
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/template", templateRoutes);
 app.use("/invoice", invoiceRoutes);
 app.use("/ocr", ocrRoutes);
 
+// ---- Cloudinary signature endpoint ----
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
 app.post("/generate-signature", (req, res) => {
@@ -92,12 +101,16 @@ app.post("/generate-signature", (req, res) => {
   }
 });
 
-connectDB().catch((err) => {
-  console.error("MongoDB connection error:", err);
-});
-
-app.listen(port,()=>{
-  console.log("Server Start on "+port)
-})
+// ---- DB connection & server start ----
+connectDB()
+  .then(() => {
+    app.listen(port, () => {
+      console.log("Server started on port " + port);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
 
 module.exports = app;

@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 const { publicUserSelect } = require("../middleware/auth");
-
+const UserM=require("../models/userModel.js")
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const normalizeEmail = (email) => email?.trim().toLowerCase();
@@ -79,96 +79,107 @@ const createUser = async (payload) => {
     await user.save();
     return user;
 };
-
 const register = async (req, res) => {
     try {
-        if (handleValidation(req, res)) return;
+        const { name, email, password } = req.body;
 
-        const username = normalizeUsername(req.body.username);
-        const email = normalizeEmail(req.body.email);
-        const name = req.body.name?.trim() || username;
-        const { password } = req.body;
-
-        const existingUser = await User.findOne({
-            $or: [{ email }, { username }],
-        });
-
-        if (existingUser) {
-            return res.status(409).json({
-                message:
-                    existingUser.email === email
-                        ? "Email is already registered"
-                        : "Username is already taken",
-            });
+        if (!name || !email || !password) {
+            return res.json({ success: false, message: "Missing Details" });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12);
-        const user = await User.create({
-            username,
+        const existingUser = await UserM.findOne({ email });
+        if (existingUser) {
+            return res.json({ success: false, message: "User already exists" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new UserM({
             name,
             email,
             password: hashedPassword,
-            authProvider: "local",
+        });
+        await user.save();
+
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        return sendAuthResponse(req, res, user, "Registration successful");
+        // If sendAuthResponse builds a custom response, use it here instead:
+        // return sendAuthResponse(req, res, user, "Registration successful");
+
+        return res.json({ success: true, message: "Registration successful" });
     } catch (error) {
         console.error("Registration Error:", error);
         if (error.code === 11000) {
-            return res.status(409).json({ message: "User already exists" });
+            return res.status(409).json({ success: false, message: "User already exists" });
         }
-        return res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
 
 const login = async (req, res) => {
     try {
-        if (handleValidation(req, res)) return;
+        const { email, password } = req.body;
 
-        const usernameOrEmail = req.body.usernameOrEmail.trim().toLowerCase();
-        const { password } = req.body;
-
-        const user = await User.findOne({
-            $or: [{ email: usernameOrEmail }, { username: usernameOrEmail }],
-        }).select("+password");
-
-        if (!user || !user.password) {
-            return res.status(401).json({ message: "Invalid username/email or password" });
+        if (!email || !password) {
+            return res.json({
+                success: false,
+                message: "Email and password are required",
+            });
         }
 
-        if (!user.isActive) {
-            return res.status(403).json({ message: "This account is disabled" });
+        const user = await UserM.findOne({ email });
+        if (!user) {
+            return res.json({ success: false, message: "Invalid email" });
         }
 
-        const passwordMatches = await bcrypt.compare(password, user.password);
-        if (!passwordMatches) {
-            return res.status(401).json({ message: "Invalid username/email or password" });
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.json({ success: false, message: "Invalid password" });
         }
 
-        return sendAuthResponse(req, res, user, "Login successful");
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.json({ success: true, message: "Login successful" });
     } catch (error) {
         console.error("Login Error:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
 
-const logout = async (req, res) => {
-    const userId = req.session?.userId;
+ const logout = async (req, res) => {
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        });
 
-    if (userId) {
-        await User.findByIdAndUpdate(userId, { $unset: { token: "" } });
+        return res.json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+        return res.json({ success: false, message: error.message });
     }
-
-    req.session.destroy((error) => {
-        if (error) {
-            return res.status(500).json({ message: "Could not logout" });
-        }
-
-        res.clearCookie("airinvoice.sid");
-        return res.status(200).json({ message: "Logout successful" });
-    });
 };
-
 const getCurrentUser = async (req, res) => {
     return res.status(200).json({ user: toPublicUser(req.user) });
 };
