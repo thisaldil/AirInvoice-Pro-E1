@@ -26,4 +26,4 @@ resetOtpExpireAt: { type: Number, default: 0 },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("UserModel", userSchema);
+module.exports = mongoose.model("Usermodel", userSchema,"google_users");

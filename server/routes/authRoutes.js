@@ -54,6 +54,28 @@ router.post(
   authController.login
 );
 
+router.post(
+  "/verify-otp",
+  [
+    body("email").trim().isEmail().withMessage("Please enter a valid email").normalizeEmail(),
+    body("otp")
+      .trim()
+      .isLength({ min: 6, max: 6 })
+      .withMessage("OTP must be 6 digits")
+      .isNumeric()
+      .withMessage("OTP must contain only numbers"),
+  ],
+  authController.verifyOtp
+);
+
+router.post(
+  "/resend-otp",
+  [
+    body("email").trim().isEmail().withMessage("Please enter a valid email").normalizeEmail(),
+  ],
+  authController.resendOtp
+);
+
 router.post("/logout", authController.logout);
 router.get("/me", requireAuth, authController.getCurrentUser);
 router.put(

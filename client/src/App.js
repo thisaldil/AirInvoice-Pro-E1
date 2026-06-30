@@ -7,7 +7,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
-
+import OTP from "./components/auth/OTP.jsx";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import InvoiceUpload from "./components/invoice/InvoiceUpload.jsx";
@@ -142,6 +142,16 @@ function AppWrapper() {
               <Navigate to="/dashboard" replace />
             ) : (
               <Register onAuth={handleAuth} />
+            )
+          }
+        />
+        <Route
+          path="/otp"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <OTP onAuth={handleAuth} />
             )
           }
         />

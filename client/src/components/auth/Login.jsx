@@ -46,6 +46,12 @@ const Login = ({ onAuth }) => {
 
       const data = await res.json();
 
+      if (data.requiresVerification) {
+        toast(data.message || "Please verify your email first");
+        navigate("/otp", { state: { email: data.email || usernameOrEmail.trim() } });
+        return;
+      }
+
       if (!res.ok) {
         toast.error(data.message || "Invalid username/email or password");
         return;

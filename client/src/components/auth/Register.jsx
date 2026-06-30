@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
-import { apiUrl, saveAuthData } from "../../utils/api";
+import { apiUrl } from "../../utils/api";
 
 const Register = ({ onAuth }) => {
   const navigate = useNavigate();
@@ -75,23 +75,10 @@ const Register = ({ onAuth }) => {
         return;
       }
 
-      if (data.token || data.success) {
-        const authData = {
-          ...data,
-          user: data.user || {
-            username: username.trim(),
-            name: username.trim(),
-            email: email.trim(),
-          },
-        };
-        saveAuthData(authData);
-        onAuth?.(authData.user);
-        toast.success("Registration successful");
-        navigate("/dashboard");
-      } else {
-        toast.success("Registration successful. Please login.");
-        navigate("/login");
-      }
+      // Registration now requires OTP verification before login.
+      localStorage.setItem("pendingVerifyEmail", email.trim());
+      toast.success(data.message || "OTP sent to your email");
+      navigate("/otp", { state: { email: email.trim() } });
     } catch (error) {
       console.error("Registration Error:", error);
       toast.error("Registration failed. Please try again.");
