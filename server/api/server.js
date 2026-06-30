@@ -38,9 +38,9 @@ const corsOptions = {
 
 app.set("trust proxy", 1);
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions)); // safer wildcard than "*" for some Express/path-to-regexp versions
+app.options(/.*/, cors(corsOptions));
 
-// ---- Core middleware (must come before routes) ----
+// ---- Core middleware (MUST come before routes) ----
 app.use(express.json());
 app.use(cookieParser());
 
@@ -69,7 +69,7 @@ app.use(passport.session());
 require("../models/User");
 require("../services/passport");
 
-// ---- Routes (mounted AFTER middleware, no duplicates) ----
+// ---- Routes (mounted once, after middleware) ----
 const authRoutes = require("../routes/authRoutes");
 const userRoutes = require("../routes/userRoutes");
 const templateRoutes = require("../routes/templateRoutes");
@@ -101,11 +101,11 @@ app.post("/generate-signature", (req, res) => {
   }
 });
 
-// ---- DB connection & server start ----
+// ---- DB connection & server start (for local dev) ----
 connectDB()
   .then(() => {
     app.listen(port, () => {
-      console.log("Server started on port " + port);
+      console.log("Server Start on " + port);
     });
   })
   .catch((err) => {

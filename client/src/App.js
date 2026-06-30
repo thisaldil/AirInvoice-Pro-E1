@@ -74,6 +74,14 @@ function AppWrapper() {
       };
     }
 
+    if (token === "cookie-authenticated") {
+      setIsAuthenticated(true);
+      setAuthChecked(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     authFetch("/auth/me")
       .then(async (res) => {
         if (!res.ok) {

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
 import toast from "react-hot-toast";
-import { apiUrl, clearAuthData, saveAuthData } from "../../utils/api";
+import { apiUrl, saveAuthData } from "../../utils/api";
 
 const Login = ({ onAuth }) => {
   const navigate = useNavigate();
@@ -40,6 +39,7 @@ const Login = ({ onAuth }) => {
         },
         body: JSON.stringify({
           usernameOrEmail: usernameOrEmail.trim(),
+          email: usernameOrEmail.trim(),
           password,
         }),
       });
@@ -51,13 +51,20 @@ const Login = ({ onAuth }) => {
         return;
       }
 
-      if (data.token) {
-        saveAuthData(data);
-        onAuth?.(data.user);
+      if (data.token || data.success) {
+        const authData = {
+          ...data,
+          user: data.user || {
+            email: usernameOrEmail.trim(),
+            name: usernameOrEmail.trim(),
+          },
+        };
+        saveAuthData(authData);
+        onAuth?.(authData.user);
         toast.success("Login successful");
         navigate("/dashboard");
       } else {
-        toast.error("Login failed. Token not found.");
+        toast.error(data.message || "Login failed.");
       }
     } catch (error) {
       console.error("Login Error:", error);
@@ -67,56 +74,15 @@ const Login = ({ onAuth }) => {
     }
   };
 
-  const handleSuccess = async (response) => {
-    try {
-      const res = await fetch(apiUrl("/auth/google/callback"), {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token: response.credential,
-        }),
-      });
-
-      if (res.status === 404) {
-        clearAuthData();
-        toast.info("Account not registered. Please register first.");
-        return;
-      }
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.message || "Failed to authenticate");
-        return;
-      }
-
-      if (data.token) {
-        saveAuthData(data);
-        onAuth?.(data.user);
-        toast.success("Google login successful");
-        navigate("/dashboard");
-      } else {
-        toast.error("Login failed. Token not found.");
-      }
-    } catch (error) {
-      console.error("Google Login Error:", error);
-      toast.error("Login failed. Please try again.");
-    }
-  };
-
   return (
-    <GoogleOAuthProvider clientId="536656085214-lflgf5vpabtlh57mt6jj5f4v2qpdu6o0.apps.googleusercontent.com">
-      <div
-        style={{
-          backgroundImage: `url(${bg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-        className="relative flex h-screen w-full overflow-hidden bg-gray-100"
-      >
+    <div
+      style={{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+      className="relative flex h-screen w-full overflow-hidden bg-gray-100"
+    >
         {/* Left Side */}
         <div className="hidden md:block absolute left-0 top-0 h-full w-1/2 text-white z-0">
           <div className="flex flex-col justify-center items-center h-full px-12">
@@ -181,20 +147,6 @@ const Login = ({ onAuth }) => {
               </button>
             </form>
 
-            <div className="flex items-center my-4">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="mx-3 text-gray-500 text-sm">or</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div>
-
-            <GoogleLogin
-              onSuccess={handleSuccess}
-              onError={() => {
-                console.error("Google Login Failed");
-                toast.error("Google Login Failed");
-              }}
-            />
-
             <div className="mt-6 text-sm text-gray-600">
               Don&apos;t have an account?{" "}
               <Link to="/register" className="text-blue-500 hover:underline">
@@ -203,8 +155,7 @@ const Login = ({ onAuth }) => {
             </div>
           </motion.div>
         </div>
-      </div>
-    </GoogleOAuthProvider>
+    </div>
   );
 };
 

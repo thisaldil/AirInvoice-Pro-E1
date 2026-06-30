@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
@@ -76,9 +75,17 @@ const Register = ({ onAuth }) => {
         return;
       }
 
-      if (data.token) {
-        saveAuthData(data);
-        onAuth?.(data.user);
+      if (data.token || data.success) {
+        const authData = {
+          ...data,
+          user: data.user || {
+            username: username.trim(),
+            name: username.trim(),
+            email: email.trim(),
+          },
+        };
+        saveAuthData(authData);
+        onAuth?.(authData.user);
         toast.success("Registration successful");
         navigate("/dashboard");
       } else {
@@ -93,52 +100,15 @@ const Register = ({ onAuth }) => {
     }
   };
 
-  const handleSuccess = async (response) => {
-    try {
-      const token = response.credential;
-
-      const verify = await fetch(apiUrl("/auth/google/register"), {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-        }),
-      });
-
-      const data = await verify.json();
-
-      if (!verify.ok) {
-        toast.error(data.message || "Registration failed. Please try again.");
-        return;
-      }
-
-      if (data.token) {
-        saveAuthData(data);
-        onAuth?.(data.user);
-        toast.success("Google registration successful");
-        navigate("/dashboard");
-      } else {
-        toast.error("Registration failed. Token not found.");
-      }
-    } catch (error) {
-      console.error("Google Registration Error:", error);
-      toast.error("Registration failed. Please try again.");
-    }
-  };
-
   return (
-    <GoogleOAuthProvider clientId="536656085214-lflgf5vpabtlh57mt6jj5f4v2qpdu6o0.apps.googleusercontent.com">
-      <div
-        style={{
-          backgroundImage: `url(${bg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-        className="relative flex min-h-screen w-full overflow-hidden bg-gray-100"
-      >
+    <div
+      style={{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+      className="relative flex min-h-screen w-full overflow-hidden bg-gray-100"
+    >
         {/* Left Side Branding */}
         <div className="hidden md:block absolute left-0 top-0 h-full w-1/2 text-white z-0">
           <div className="flex flex-col justify-center items-center h-full px-12">
@@ -221,20 +191,6 @@ const Register = ({ onAuth }) => {
               </button>
             </form>
 
-            <div className="flex items-center my-4">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="mx-3 text-gray-500 text-sm">or</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div>
-
-            <GoogleLogin
-              onSuccess={handleSuccess}
-              onError={() => {
-                console.error("Google Registration Failed");
-                toast.error("Google Registration Failed");
-              }}
-            />
-
             <div className="mt-6 text-sm text-gray-600">
               Already have an account?{" "}
               <Link to="/login" className="text-blue-500 hover:underline">
@@ -243,8 +199,7 @@ const Register = ({ onAuth }) => {
             </div>
           </motion.div>
         </div>
-      </div>
-    </GoogleOAuthProvider>
+    </div>
   );
 };
 

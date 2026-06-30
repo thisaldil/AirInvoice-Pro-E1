@@ -1,7 +1,10 @@
 export const API_BASE_URL =
   process.env.REACT_APP_API_URL || "https://air-invoice-pro-jd9l.vercel.app";
 
-export const apiUrl = (path) => `${API_BASE_URL}${path}`;
+const backendPath = (path) =>
+  path.startsWith("/auth") ? path.replace("/auth", "/api/auth") : path;
+
+export const apiUrl = (path) => `${API_BASE_URL}${backendPath(path)}`;
 
 export const authFetch = (path, options = {}) => {
   const token = localStorage.getItem("token");
@@ -18,8 +21,10 @@ export const authFetch = (path, options = {}) => {
 };
 
 export const saveAuthData = (data) => {
-  if (data.token) {
-    localStorage.setItem("token", data.token);
+  const token = data.token || "cookie-authenticated";
+
+  if (token) {
+    localStorage.setItem("token", token);
   }
 
   if (data.user) {
