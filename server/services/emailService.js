@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-const isProduction = process.env.NODE_ENV === "production";
+const { isProduction } = require("../utils/auth");
 
 const getSmtpSenderEmail = () =>
   process.env.SENDER_EMAIL || process.env.SMTP_FROM || process.env.SMTP_USER;

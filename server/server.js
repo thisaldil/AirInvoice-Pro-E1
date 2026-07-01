@@ -6,7 +6,7 @@ if (!buffer.SlowBuffer) {
 
 const app = require("./api/server");
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || "127.0.0.1";
 
 app.listen(PORT, HOST, () => {

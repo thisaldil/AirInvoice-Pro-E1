@@ -9,12 +9,15 @@ import {
   MoonIcon,
 } from "lucide-react";
 import logo from "../../images/logo-placeholder.jpg";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { pdf } from "@react-pdf/renderer";
 import PdfInvoice from "../PdfInvoice";
 import toast from "react-hot-toast";
 import { authFetch } from "../../utils/api";
+import {
+  deleteUserAsset,
+  uploadUserAsset,
+} from "../../utils/cloudinary";
 
 function TemplateEditor({ invoiceData, onSave, onCancel }) {
   // Internal theme state - no external context needed
@@ -36,6 +39,8 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const [templateName, setTemplateName] = useState("New Template");
   const [companyName, setCompanyName] = useState("Your Company Name");
   const [companyLogo, setCompanyLogo] = useState(logo);
+  const [companyLogoAssetId, setCompanyLogoAssetId] = useState(null);
+  const [companyLogoFile, setCompanyLogoFile] = useState(null);
   const [companyAddress, setCompanyAddress] = useState(
     "123 Business Street\nCity, State 12345\nPhone: (123) 456-7890\nEmail: info@yourcompany.com"
   );
@@ -48,10 +53,6 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   const [isEditing, setIsEditing] = useState(false);
   const previewRef = useRef();
   const [uploading, setUploading] = useState(false);
-  const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-  const CLOUDINARY_UPLOAD_PRESET =
-    process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
-
   useEffect(() => {
     if (id) {
       setIsEditing(true);
@@ -67,6 +68,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           setTemplateName(t.name);
           setCompanyName(t.company.name);
           setCompanyLogo(t.company.logo);
+          setCompanyLogoAssetId(t.company.logoAssetId || null);
           setCompanyAddress(t.company.address);
           setAccentColor(t.design.accentColor);
           setShowFooter(t.design.showFooter);
@@ -100,25 +102,42 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
   };
 
   const handleSave = async () => {
-    const updatedTemplate = {
-      name: templateName,
-      description: "Custom invoice template",
-      isDefault: false,
-      company: {
-        name: companyName,
-        logo: companyLogo,
-        address: companyAddress,
-      },
-      design: {
-        accentColor,
-        showFooter,
-        footerText,
-      },
-    };
+    let uploadedInvoiceAssetId = null;
+    let uploadedLogoAssetId = null;
+    let nextLogoUrl = companyLogo;
+    let nextLogoAssetId = companyLogoAssetId;
 
     setUploading(true);
 
     try {
+      if (companyLogoFile) {
+        const logoAsset = await uploadUserAsset(
+          companyLogoFile,
+          "template-logo",
+          "image"
+        );
+        uploadedLogoAssetId = logoAsset.id;
+        nextLogoAssetId = logoAsset.id;
+        nextLogoUrl = logoAsset.accessUrl;
+      }
+
+      const updatedTemplate = {
+        name: templateName,
+        description: "Custom invoice template",
+        isDefault: false,
+        company: {
+          name: companyName,
+          logo: nextLogoUrl,
+          logoAssetId: nextLogoAssetId,
+          address: companyAddress,
+        },
+        design: {
+          accentColor,
+          showFooter,
+          footerText,
+        },
+      };
+
       if (invoiceData) {
         const bookingRef = invoiceData.bookingReference || "DRAFT";
         const currentDate = new Date().toISOString().split("T")[0];
@@ -129,7 +148,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           duplicateExists = await checkDuplicateInvoice(bookingRef);
         } catch (err) {
           toast.error(err.message);
-          setUploading(false);
+          await deleteUserAsset(uploadedLogoAssetId);
           return;
         }
 
@@ -139,24 +158,26 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           );
           if (!confirmed) {
             toast.error("Invoice creation cancelled.");
-            setUploading(false);
+            await deleteUserAsset(uploadedLogoAssetId);
             return;
           } else {
             toast.warning("Proceeding despite duplicate booking reference.");
           }
         }
 
-        let invoiceTemplate = { ...updatedTemplate, _id: id };
-        if (!id) {
-          const templateResponse = await authFetch("/template/createTemplate", {
-            method: "POST",
+        const templateResponse = await authFetch(
+          id
+            ? `/template/updateTemplate/${id}`
+            : "/template/createTemplate",
+          {
+            method: id ? "PUT" : "POST",
             body: JSON.stringify(updatedTemplate),
-          });
-          invoiceTemplate = await templateResponse.json();
-
-          if (!templateResponse.ok) {
-            throw new Error(invoiceTemplate.error || "Failed to save template");
           }
+        );
+        const invoiceTemplate = await templateResponse.json();
+
+        if (!templateResponse.ok) {
+          throw new Error(invoiceTemplate.error || "Failed to save template");
         }
 
         const blob = await pdf(
@@ -166,28 +187,17 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
           />
         ).toBlob();
 
-        // Upload to Cloudinary
-        const formData = new FormData();
-        formData.append("file", blob, fileName);
-        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-        formData.append("resource_type", "raw");
-
-        const cloudinaryRes = await axios.post(
-          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
+        const invoiceAsset = await uploadUserAsset(
+          new File([blob], fileName, { type: "application/pdf" }),
+          "invoice",
+          "raw"
         );
-
-        const cloudinaryUrl = cloudinaryRes.data.secure_url;
+        uploadedInvoiceAssetId = invoiceAsset.id;
 
         const saveInvoiceRes = await authFetch("/invoice/saveInvoiceDetails", {
           method: "POST",
           body: JSON.stringify({
-            pdfUrl: cloudinaryUrl,
+            cloudinaryAssetId: invoiceAsset.id,
             template: {
               _id: invoiceTemplate._id,
               company: {
@@ -246,6 +256,10 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
       navigate("/dashboard/templates");
     } catch (err) {
       console.error("Failed to save template or PDF:", err);
+      await Promise.allSettled([
+        deleteUserAsset(uploadedInvoiceAssetId),
+        deleteUserAsset(uploadedLogoAssetId),
+      ]);
       toast.error("Error saving template or uploading PDF. Please try again.");
     } finally {
       setUploading(false);
@@ -254,6 +268,7 @@ function TemplateEditor({ invoiceData, onSave, onCancel }) {
 
   const handleLogoChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      setCompanyLogoFile(e.target.files[0]);
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {

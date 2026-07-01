@@ -35,9 +35,7 @@ function AppWrapper() {
   const [uploadedInvoice, setUploadedInvoice] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [generatedInvoice, setGeneratedInvoice] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    Boolean(localStorage.getItem("token"))
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
 
@@ -63,24 +61,6 @@ function AppWrapper() {
 
   useEffect(() => {
     let cancelled = false;
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      clearAuthData();
-      setIsAuthenticated(false);
-      setAuthChecked(true);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (token === "cookie-authenticated") {
-      setIsAuthenticated(true);
-      setAuthChecked(true);
-      return () => {
-        cancelled = true;
-      };
-    }
 
     authFetch("/auth/me")
       .then(async (res) => {

@@ -8,6 +8,11 @@ const nodemailer = require("nodemailer");
 const axios = require("axios");
 const Invoice = require("../models/Invoice");
 const Template = require("../models/Template");
+const CloudinaryAsset = require("../models/CloudinaryAsset");
+const {
+  destroyCloudinaryAsset,
+  getPrivateDownloadUrl,
+} = require("../services/cloudinaryService");
 
 const getRequestUserId = (req) => req.userId || req.user?._id?.toString();
 
@@ -23,6 +28,65 @@ const assertOwnedUserParam = (req, res, userId) => {
 const parseAmount = (value) => {
   const amount = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
   return Number.isFinite(amount) ? amount : 0;
+};
+
+const isAllowedInvoiceUrl = (value) => {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.hostname !== "res.cloudinary.com") {
+      return false;
+    }
+
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    return !cloudName || url.pathname.startsWith(`/${cloudName}/`);
+  } catch {
+    return false;
+  }
+};
+
+const addAssetAccessUrls = async (invoices, userId) => {
+  const list = Array.isArray(invoices) ? invoices : [invoices];
+  const assetIds = list
+    .map((invoice) => invoice?.cloudinaryAsset)
+    .filter(Boolean);
+  const logoAssetIds = list
+    .map((invoice) => invoice?.template?.company?.logoAsset)
+    .filter(Boolean);
+  const allAssetIds = [...assetIds, ...logoAssetIds];
+  const assets = allAssetIds.length
+    ? await CloudinaryAsset.find({
+        _id: { $in: allAssetIds },
+        userId,
+      })
+    : [];
+  const assetsById = new Map(
+    assets.map((asset) => [asset._id.toString(), asset])
+  );
+
+  const serialized = list.map((invoice) => {
+    const data = invoice.toObject ? invoice.toObject() : { ...invoice };
+    const asset = data.cloudinaryAsset
+      ? assetsById.get(data.cloudinaryAsset.toString())
+      : null;
+
+    if (asset) {
+      data.cloudinaryAssetId = asset._id;
+      data.pdfUrl = getPrivateDownloadUrl(asset);
+    }
+
+    const logoAssetId = data.template?.company?.logoAsset;
+    const logoAsset = logoAssetId
+      ? assetsById.get(logoAssetId.toString())
+      : null;
+    if (logoAsset) {
+      data.template.company.logoAssetId = logoAsset._id;
+      data.template.company.logo = getPrivateDownloadUrl(logoAsset);
+    }
+
+    return data;
+  });
+
+  return Array.isArray(invoices) ? serialized : serialized[0];
 };
 
 // Upload invoice and perform OCR.
@@ -65,11 +129,16 @@ exports.uploadInvoice = async (req, res) => {
 // Save invoice details for the logged-in user.
 exports.saveInvoiceDetails = async (req, res) => {
   const requestUserId = getRequestUserId(req);
-  const { pdfUrl, template, invoiceDetails, priceDetails } = req.body;
+  const {
+    cloudinaryAssetId,
+    template,
+    invoiceDetails,
+    priceDetails,
+  } = req.body;
 
   if (
     !requestUserId ||
-    !pdfUrl ||
+    !cloudinaryAssetId ||
     !template?._id ||
     !invoiceDetails?.bookingReference ||
     !invoiceDetails?.passengerName ||
@@ -79,29 +148,45 @@ exports.saveInvoiceDetails = async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  if (!mongoose.isValidObjectId(template._id)) {
-    return res.status(400).json({ error: "Invalid template ID" });
+  if (
+    !mongoose.isValidObjectId(template._id) ||
+    !mongoose.isValidObjectId(cloudinaryAssetId)
+  ) {
+    return res.status(400).json({ error: "Invalid template or asset ID" });
   }
 
   try {
-    const ownedTemplate = await Template.findOne({
-      _id: template._id,
-      userId: requestUserId,
-    });
+    const [ownedTemplate, ownedAsset] = await Promise.all([
+      Template.findOne({
+        _id: template._id,
+        userId: requestUserId,
+      }),
+      CloudinaryAsset.findOne({
+        _id: cloudinaryAssetId,
+        userId: req.user._id,
+        purpose: "invoice",
+        resourceType: "raw",
+        linkedInvoice: null,
+      }),
+    ]);
 
     if (!ownedTemplate) {
       return res.status(404).json({ error: "Template not found" });
     }
+    if (!ownedAsset) {
+      return res.status(404).json({ error: "Uploaded invoice asset not found" });
+    }
 
     const invoice = new Invoice({
       userId: requestUserId,
-      pdfUrl,
+      cloudinaryAsset: ownedAsset._id,
       template: {
         _id: ownedTemplate._id,
         company: {
-          name: template.company?.name || ownedTemplate.company?.name,
-          logo: template.company?.logo || ownedTemplate.company?.logo,
-          address: template.company?.address || ownedTemplate.company?.address,
+          name: ownedTemplate.company?.name,
+          logo: ownedTemplate.company?.logo,
+          logoAsset: ownedTemplate.company?.logoAsset,
+          address: ownedTemplate.company?.address,
         },
       },
       invoiceDetails: {
@@ -118,7 +203,26 @@ exports.saveInvoiceDetails = async (req, res) => {
 
     await invoice.save();
 
-    return res.status(201).json({ message: "Invoice saved successfully", invoice });
+    const linkedAsset = await CloudinaryAsset.findOneAndUpdate(
+      {
+        _id: ownedAsset._id,
+        userId: req.user._id,
+        linkedInvoice: null,
+      },
+      { $set: { linkedInvoice: invoice._id } },
+      { new: true }
+    );
+
+    if (!linkedAsset) {
+      await invoice.deleteOne();
+      return res.status(409).json({ error: "Uploaded asset is already in use" });
+    }
+
+    const serializedInvoice = await addAssetAccessUrls(invoice, req.user._id);
+    return res.status(201).json({
+      message: "Invoice saved successfully",
+      invoice: serializedInvoice,
+    });
   } catch (err) {
     console.error("Error saving invoice:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -134,7 +238,7 @@ exports.getInvoiceDetailsByUserId = async (req, res) => {
 
   try {
     const invoices = await Invoice.find({ userId: requestUserId }).sort({ createdAt: -1 });
-    return res.json(invoices);
+    return res.json(await addAssetAccessUrls(invoices, req.user._id));
   } catch (err) {
     console.error("Error fetching invoices:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -156,7 +260,9 @@ exports.getInvoiceDetailsByInvoiceId = async (req, res) => {
       return res.status(404).json({ error: "Invoice not found" });
     }
 
-    return res.status(200).json(invoice);
+    return res.status(200).json(
+      await addAssetAccessUrls(invoice, req.user._id)
+    );
   } catch (err) {
     console.error("Error fetching invoice:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -168,7 +274,11 @@ exports.sendInvoiceEmail = async (req, res) => {
   const requestUserId = getRequestUserId(req);
   const { email, invoiceId, pdfUrl } = req.body;
 
-  if (!email || typeof email !== "string" || !email.trim()) {
+  if (
+    !email ||
+    typeof email !== "string" ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  ) {
     return res.status(400).json({ error: "Valid recipient email is required" });
   }
 
@@ -188,11 +298,31 @@ exports.sendInvoiceEmail = async (req, res) => {
       ? await Invoice.findOne({ _id: invoiceId, userId: requestUserId })
       : await Invoice.findOne({ pdfUrl, userId: requestUserId });
 
-    if (!invoice?.pdfUrl) {
+    if (!invoice) {
       return res.status(404).json({ error: "Invoice not found" });
     }
 
-    const response = await axios.get(invoice.pdfUrl, { responseType: "arraybuffer" });
+    let downloadUrl = invoice.pdfUrl;
+    if (invoice.cloudinaryAsset) {
+      const asset = await CloudinaryAsset.findOne({
+        _id: invoice.cloudinaryAsset,
+        userId: req.user._id,
+        linkedInvoice: invoice._id,
+      });
+      if (!asset) {
+        return res.status(404).json({ error: "Invoice file not found" });
+      }
+      downloadUrl = getPrivateDownloadUrl(asset);
+    } else if (!isAllowedInvoiceUrl(downloadUrl)) {
+      return res.status(400).json({ error: "Invalid invoice PDF URL" });
+    }
+
+    const response = await axios.get(downloadUrl, {
+      responseType: "arraybuffer",
+      timeout: 10000,
+      maxContentLength: 10 * 1024 * 1024,
+      maxRedirects: 3,
+    });
     fs.writeFileSync(tempPath, Buffer.from(response.data));
 
     const transporter = nodemailer.createTransport({
@@ -255,10 +385,27 @@ exports.deleteInvoice = async (req, res) => {
   }
 
   try {
-    const invoice = await Invoice.findOneAndDelete({ _id: invoiceId, userId: requestUserId });
+    const invoice = await Invoice.findOne({ _id: invoiceId, userId: requestUserId });
     if (!invoice) {
       return res.status(404).json({ error: "Invoice not found" });
     }
+
+    if (invoice.cloudinaryAsset) {
+      const asset = await CloudinaryAsset.findOne({
+        _id: invoice.cloudinaryAsset,
+        userId: req.user._id,
+        linkedInvoice: invoice._id,
+      });
+      if (asset) {
+        const result = await destroyCloudinaryAsset(asset);
+        if (!["ok", "not found"].includes(result.result)) {
+          return res.status(502).json({ error: "Cloudinary file deletion failed" });
+        }
+        await asset.deleteOne();
+      }
+    }
+
+    await invoice.deleteOne();
     return res.status(200).json({ message: "Invoice deleted successfully" });
   } catch (error) {
     return res.status(500).json({ error: "Failed to delete invoice" });
@@ -268,7 +415,9 @@ exports.deleteInvoice = async (req, res) => {
 exports.getAllInvoices = async (req, res) => {
   try {
     const invoices = await Invoice.find({ userId: getRequestUserId(req) }).sort({ createdAt: -1 });
-    return res.status(200).json(invoices);
+    return res.status(200).json(
+      await addAssetAccessUrls(invoices, req.user._id)
+    );
   } catch (err) {
     console.error("Error fetching invoices:", err);
     return res.status(500).json({ error: "Failed to fetch invoices" });

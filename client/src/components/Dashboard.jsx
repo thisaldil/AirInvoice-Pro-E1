@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { FileTextIcon, FileUpIcon, SendIcon, BoxIcon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { authFetch } from "../utils/api";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
 
   const [recentInvoices, setRecentInvoices] = useState([]);
 
@@ -13,12 +12,6 @@ function Dashboard() {
   const [monthlyRevenue, setMonthlyRevenue] = useState(0);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
 
@@ -64,7 +57,7 @@ function Dashboard() {
       .catch((err) => {
         console.error("Failed to load monthly revenue", err);
       });
-  }, [navigate]);
+  }, []);
 
   return (
     <div>

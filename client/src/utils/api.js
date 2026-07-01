@@ -6,18 +6,13 @@ const backendPath = (path) =>
 
 export const apiUrl = (path) => `${API_BASE_URL}${backendPath(path)}`;
 
-export const authHeaders = (headers = {}) => {
-  const token = localStorage.getItem("token");
-  return {
-    ...(token && token !== "cookie-authenticated" ? { Authorization: `Bearer ${token}` } : {}),
-    ...headers,
-  };
-};
+export const authHeaders = (headers = {}) => ({ ...headers });
 
 export const authFetch = (path, options = {}) => {
   const isFormData = options.body instanceof FormData;
+  const hasJsonBody = options.body != null && !isFormData;
   const headers = authHeaders({
-    ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    ...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
   });
 
@@ -29,12 +24,6 @@ export const authFetch = (path, options = {}) => {
 };
 
 export const saveAuthData = (data) => {
-  const token = data.token || "cookie-authenticated";
-
-  if (token) {
-    localStorage.setItem("token", token);
-  }
-
   if (data.user) {
     localStorage.setItem(
       "user",
@@ -50,10 +39,9 @@ export const saveAuthData = (data) => {
     );
   }
 
-  const userId = data.userId || data.user?._id || data.user?.id;
-  if (userId) {
-    localStorage.setItem("userId", userId);
-  }
+  // Remove legacy auth values. Authentication is held only in the HttpOnly cookie.
+  localStorage.removeItem("token");
+  localStorage.removeItem("userId");
 };
 
 export const clearAuthData = () => {

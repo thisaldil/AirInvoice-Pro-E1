@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import bg from "../../images/bg.png";
@@ -11,14 +11,6 @@ const Login = ({ onAuth }) => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -64,7 +56,7 @@ const Login = ({ onAuth }) => {
         return;
       }
 
-      if (data.token || data.success) {
+      if (data.success) {
         const authData = {
           ...data,
           user: data.user || {

@@ -21,7 +21,7 @@ const userSchema = new Schema(
     password: { type: String, select: false },
     googleId: { type: String },
     picture: { type: String },
-    token: { type: String, select: false },
+    tokenVersion: { type: Number, default: 0, select: false },
     authProvider: {
       type: String,
       enum: ["local", "google"],
@@ -34,11 +34,15 @@ const userSchema = new Schema(
     },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date },
-    verifyotp: { type: String, default: "" },
-    verifyotpExpireat: { type: Number, default: 0 },
+    verifyotp: { type: String, default: "", select: false },
+    verifyotpExpireat: { type: Number, default: 0, select: false },
+    verifyotpAttempts: { type: Number, default: 0, select: false },
+    verifyotpLastSentAt: { type: Date, select: false },
     isAccountVerified: { type: Boolean, default: false },
-    resetOtp: { type: String, default: "" },
-    resetOtpExpireAt: { type: Number, default: 0 },
+    loginAttempts: { type: Number, default: 0, select: false },
+    loginLockedUntil: { type: Date, select: false },
+    resetOtp: { type: String, default: "", select: false },
+    resetOtpExpireAt: { type: Number, default: 0, select: false },
   },
   { timestamps: true }
 );

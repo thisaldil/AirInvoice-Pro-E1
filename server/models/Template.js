@@ -9,6 +9,7 @@ const TemplateSchema = new Schema({
   company: {
     name: String,
     logo: String,
+    logoAsset: { type: Schema.Types.ObjectId, ref: "CloudinaryAsset" },
     address: String,
   },
   design: {

@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { publicUserSelect } = require("../middleware/auth");
 
 exports.getUserDetails = async (req, res) => {
     try {
@@ -8,7 +9,7 @@ exports.getUserDetails = async (req, res) => {
             return res.status(403).json({ error: "You do not have access to this user's data" });
         }
 
-        const user = await User.findById(requestUserId).select("-password -token -__v");
+        const user = await User.findById(requestUserId).select(publicUserSelect);
         if (!user) return res.status(404).json({ error: "User not found" });
         return res.json(user);
     } catch (err) {

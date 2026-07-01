@@ -196,10 +196,11 @@ const Settings = () => {
             <input
               name="email"
               value={profile.email}
-              onChange={handleProfileChange}
               placeholder="Email"
               type="email"
-              className="px-4 py-3 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-900"
+              readOnly
+              title="Email changes require verification"
+              className="px-4 py-3 rounded-md border border-gray-300 bg-gray-200 text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
             />
             <input
               name="picture"

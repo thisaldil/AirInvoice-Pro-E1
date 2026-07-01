@@ -1,9 +1,59 @@
 const express = require("express");
 const passport = require("passport");
+const crypto = require("crypto");
 const { body } = require("express-validator");
 const authController = require("../controllers/authController");
 const { requireAuth } = require("../middleware/auth");
+const {
+  OAUTH_STATE_COOKIE_NAME,
+  isProduction,
+  oauthStateCookieOptions,
+} = require("../utils/auth");
 const router = express.Router();
+
+router.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
+const clientUrl = (
+  process.env.CLIENT_URL ||
+  (isProduction
+    ? "https://air-invoice-client.vercel.app"
+    : "http://localhost:3000")
+).replace(/\/$/, "");
+
+const beginGoogleAuth = (req, res, next) => {
+  const state = crypto.randomBytes(32).toString("base64url");
+  res.cookie(OAUTH_STATE_COOKIE_NAME, state, oauthStateCookieOptions());
+
+  return passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    state,
+  })(req, res, next);
+};
+
+const verifyGoogleState = (req, res, next) => {
+  const expected = req.cookies?.[OAUTH_STATE_COOKIE_NAME];
+  const received = typeof req.query.state === "string" ? req.query.state : "";
+  res.clearCookie(OAUTH_STATE_COOKIE_NAME, oauthStateCookieOptions(false));
+
+  if (!expected || expected.length !== received.length) {
+    return res.redirect(`${clientUrl}/login?error=invalid_oauth_state`);
+  }
+
+  const matches = crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(received)
+  );
+
+  if (!matches) {
+    return res.redirect(`${clientUrl}/login?error=invalid_oauth_state`);
+  }
+
+  return next();
+};
 
 const usernameRules = [
   body("username")
@@ -76,7 +126,7 @@ router.post(
   authController.resendOtp
 );
 
-router.post("/logout", authController.logout);
+router.post("/logout", requireAuth, authController.logout);
 router.get("/me", requireAuth, authController.getCurrentUser);
 router.put(
   "/profile",
@@ -114,11 +164,15 @@ router.put(
 );
 router.delete("/account", requireAuth, authController.deleteAccount);
 
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", beginGoogleAuth);
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/" }),
+  verifyGoogleState,
+  passport.authenticate("google", {
+    failureRedirect: `${clientUrl}/login?error=google_auth_failed`,
+    session: false,
+  }),
   authController.handleGoogleRedirect
 );
 
